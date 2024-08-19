@@ -40,6 +40,7 @@ export type Animatable =
 export type Task =
 	Instance |
 	RBXScriptConnection |
+	thread |
 	() -> () |
 	{destroy: (unknown) -> ()} |
 	{Destroy: (unknown) -> ()} |
@@ -105,7 +106,7 @@ export type Value<T, S = T> = StateObject<T> & {
 }
 export type ValueConstructor = <T>(
 	scope: Scope<unknown>,
-	initialValue: T
+	initialValue: T?
 ) -> Value<T, any>
 
 -- A state object whose value is derived from other objects using a callback.

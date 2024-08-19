@@ -1,11 +1,10 @@
 --!strict
 --!nolint LocalUnused
 --!nolint LocalShadow
-local task = nil -- Disable usage of Roblox's task scheduler
 
 --[[
-	Cleans up the tasks passed in as the arguments.
-	A task can be any of the following:
+	Cleans up the chores passed in as the arguments.
+	A chore can be any of the following:
 
 	- an Instance - will be destroyed
 	- an RBXScriptConnection - will be disconnected
@@ -19,61 +18,77 @@ local External = require(Package.External)
 local scopePool = require(Package.Memory.scopePool)
 local poisonScope = require(Package.Memory.poisonScope)
 
-local alreadyDestroying: {[Types.Task]: true} = {}
+local alreadyDestroying: {[Types.chore]: true} = {}
 
 local function doCleanup(
-	task: Types.Task
+	chore: Types.chore
 ): ()
-	if alreadyDestroying[task] then
+	if alreadyDestroying[chore] then
 		return External.logError("destroyedTwice")
 	end
-	alreadyDestroying[task] = true
+	alreadyDestroying[chore] = true
 
 	-- case 1: Instance
-	if typeof(task) == "Instance" then
-		task:Destroy()
+	if typeof(chore) == "Instance" then
+		chore:Destroy()
 
 	-- case 2: RBXScriptConnection
-	elseif typeof(task) == "RBXScriptConnection" then
-		task:Disconnect()
+	elseif typeof(chore) == "RBXScriptConnection" then
+		chore:Disconnect()
 
-	-- case 3: callback
-	elseif typeof(task) == "function" then
-		task()
+	-- case 3: thread
+	elseif typeof(chore) == "thread" then
+		local cancelled
+		if coroutine.running() ~= chore then
+			cancelled = pcall(function()
+				task.cancel(chore)
+			end)
+		end
 
-	elseif typeof(task) == "table" then
-		local task = (task :: any) :: {Destroy: (...unknown) -> (...unknown)?, destroy: (...unknown) -> (...unknown)?}
+		if not cancelled then
+			local toCancel = chore
+			task.defer(function()
+				task.cancel(toCancel)
+			end)
+		end
 
-		-- case 4: destroy() function
-		if typeof(task.destroy) == "function" then
-			local task = (task :: any) :: {destroy: (...unknown) -> (...unknown)}
-			task:destroy()
+	-- case 4: callback
+	elseif typeof(chore) == "function" then
+		chore()
 
-		-- case 5: Destroy() function
-		elseif typeof(task.Destroy) == "function" then
-			local task = (task :: any) :: {Destroy: (...unknown) -> (...unknown)}
-			task:Destroy()
+	elseif typeof(chore) == "table" then
+		local chore = (chore :: any) :: {Destroy: (...unknown) -> (...unknown)?, destroy: (...unknown) -> (...unknown)?}
 
-		-- case 6: table of tasks with an array part
-		elseif task[1] ~= nil then
-			local task = task :: {Types.Task}
+		-- case 5: destroy() function
+		if typeof(chore.destroy) == "function" then
+			local chore = (chore :: any) :: {destroy: (...unknown) -> (...unknown)}
+			chore:destroy()
+
+		-- case 6: Destroy() function
+		elseif typeof(chore.Destroy) == "function" then
+			local chore = (chore :: any) :: {Destroy: (...unknown) -> (...unknown)}
+			chore:Destroy()
+
+		-- case 7: table of chores with an array part
+		elseif chore[1] ~= nil then
+			local chore = chore :: {Types.chore}
 
 			-- It is important to iterate backwards through the table, since
 			-- objects are added in order of construction.
-			for index = #task, 1, -1 do
-				doCleanup(task[index])
-				task[index] = nil
+			for index = #chore, 1, -1 do
+				doCleanup(chore[index])
+				chore[index] = nil
 			end
 
 			if External.isTimeCritical() then
-				scopePool.giveIfEmpty(task)
+				scopePool.giveIfEmpty(chore)
 			else
-				poisonScope(task, "`doCleanup()` was previously called on this scope. Ensure you are not reusing scopes after cleanup.")
+				poisonScope(chore, "`doCleanup()` was previously called on this scope. Ensure you are not reusing scopes after cleanup.")
 			end
 		end
 	end
 	
-	alreadyDestroying[task] = nil
+	alreadyDestroying[chore] = nil
 end
 
 return doCleanup
