@@ -4,9 +4,9 @@ It supports both constants and state objects.
 
 ```Lua
 local numbers = {1, 2, 3, 4, 5}
-local multiplier = Value(2)
+local multiplier = scope:Value(2)
 
-local multiplied = ForValues(numbers, function(use, scope, num)
+local multiplied = scope:ForValues(numbers, function(use, scope, num)
 	return num * use(multiplier)
 end)
 
@@ -116,7 +116,7 @@ names:set({"Amber", "Umair"}) --> Goodbye, Jodi!
 	values will move around too, instead of being recalculated.
 
 	Note that values are only reused once. For example, if you added another
-	occurence of 'Orange', your calculation would have to run again for the second
+	occurrence of 'Orange', your calculation would have to run again for the second
 	'Orange':
 
 	![A diagram visualising how values aren't reused when duplicates appear.](Optimisation-Duplicates-Dark.svg#only-dark)

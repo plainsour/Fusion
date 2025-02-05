@@ -15,8 +15,7 @@
 local Package = script.Parent.Parent
 local Types = require(Package.Types)
 local External = require(Package.External)
-local scopePool = require(Package.Memory.scopePool)
-local poisonScope = require(Package.Memory.poisonScope)
+local ExternalDebug = require(Package.ExternalDebug)
 
 local alreadyDestroying: {[Types.chore]: true} = {}
 
@@ -80,14 +79,10 @@ local function doCleanup(
 				chore[index] = nil
 			end
 
-			if External.isTimeCritical() then
-				scopePool.giveIfEmpty(chore)
-			else
-				poisonScope(chore, "`doCleanup()` was previously called on this scope. Ensure you are not reusing scopes after cleanup.")
-			end
+			ExternalDebug.untrackScope(task)
 		end
 	end
-	
+
 	alreadyDestroying[chore] = nil
 end
 

@@ -5,7 +5,7 @@ on:
       - main
 
 env:
-  FUSION_VERSION: 0.3
+  FUSION_VERSION: 0.4
   FUSION_DEPLOY_TYPE: 'dev'
 
 jobs:
