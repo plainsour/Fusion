@@ -9,7 +9,7 @@ local task = nil -- Disable usage of Roblox's task scheduler
 local Types = require(script.Types)
 local External = require(script.External)
 
-type Fusion = Types.Fusion
+export type Fusion = Types.Fusion
 
 export type Animatable = Types.Animatable
 export type UsedAs<T> = Types.UsedAs<T>
@@ -25,7 +25,7 @@ export type ScopedObject = Types.ScopedObject
 export type SpecialKey = Types.SpecialKey
 export type Spring<T> = Types.Spring<T>
 export type StateObject<T> = Types.StateObject<T>
-export type Task = Types.Task
+export type Chore = Types.Chore
 export type Tween<T> = Types.Tween<T>
 export type Use = Types.Use
 export type Value<T, S = T> = Types.Value<T, S>

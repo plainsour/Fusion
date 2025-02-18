@@ -77,8 +77,8 @@ local function ForKeys<KI, KO, V, S>(
 	processor: (Types.Use, Types.Scope<S>, KI) -> KO
 ): Types.For<KO, V>
 	return For(
-		scope, 
-		inputTable, 
+		scope,
+		inputTable,
 		function(scope, initialKey, initialValue)
 			return SubObject(scope, initialKey, initialValue, processor)
 		end

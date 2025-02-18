@@ -39,7 +39,7 @@ local function Attribute(
 					local value = value :: Types.StateObject<unknown>
 					checkLifetime.bOutlivesA(
 						scope, applyTo,
-						value.scope, value.oldestTask,
+						value.scope, value.oldestChore,
 						checkLifetime.formatters.boundAttribute, attributeName
 					)
 					Observer(scope, value :: any):onBind(function()

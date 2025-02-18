@@ -1,5 +1,3 @@
-
-
 --!strict
 --!nolint LocalUnused
 --!nolint LocalShadow
@@ -26,7 +24,7 @@ function checkLifetime.formatters.useFunction(
 	local usedName = nameOf(used, "object")
 	return `The use()-d {usedName}`, `the {selfName}`
 end
-	
+
 function checkLifetime.formatters.boundProperty(
 	instance: Instance,
 	bound: unknown,

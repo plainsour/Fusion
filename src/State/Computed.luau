@@ -17,11 +17,11 @@ local External = require(Package.External)
 local parseError = require(Package.Logging.parseError)
 -- Utility
 local isSimilar = require(Package.Utility.isSimilar)
+local never = require(Package.Utility.never)
 -- Graph
 local depend = require(Package.Graph.depend)
 -- State
 local castToState = require(Package.State.castToState)
-local peek = require(Package.State.peek)
 -- Memory
 local doCleanup = require(Package.Memory.doCleanup)
 local deriveScope = require(Package.Memory.deriveScope)
@@ -43,9 +43,15 @@ local METATABLE = table.freeze {__index = class}
 
 local function Computed<T, S>(
 	scope: S & Types.Scope<unknown>,
-	processor: (Types.Use, S) -> T
+	processor: (Types.Use, S) -> T,
+	destructor: unknown?
 ): Types.Computed<T>
 	local createdAt = os.clock()
+	if typeof(scope) == "function" then
+		External.logError("scopeMissing", nil, "Computeds", "myScope:Computed(function(use, scope) ... end)")
+	elseif destructor ~= nil then
+		External.logWarn("destructorRedundant", "Computed")
+	end
 	local self: Self<T, S> = setmetatable(
 		{
 			createdAt = createdAt,
@@ -67,13 +73,19 @@ local function Computed<T, S>(
 		end
 		if self._innerScope ~= nil then
 			doCleanup(self._innerScope)
-			self._innerScope = nil
 		end
 	end
-	self.oldestTask = destroy
-	nicknames[self.oldestTask] = "Computed"
+	self.oldestChore = destroy
+	nicknames[self.oldestChore] = "Computed"
 	table.insert(scope, destroy)
 	return self
+end
+
+function class.get<T, S>(
+	_self: Self<T, S>
+): never
+	External.logError("stateGetWasRemoved")
+	return never()
 end
 
 function class._evaluate<T, S>(
@@ -88,13 +100,14 @@ function class._evaluate<T, S>(
 		local targetState = castToState(target)
 		if targetState ~= nil then
 			checkLifetime.bOutlivesA(
-				outerScope, self.oldestTask, 
-				targetState.scope, targetState.oldestTask, 
+				outerScope, self.oldestChore,
+				targetState.scope, targetState.oldestChore,
 				checkLifetime.formatters.useFunction
 			)
-			depend(self, targetState)
+			return depend(self, targetState) :: T
+		else
+			return target :: T
 		end
-		return peek(target)
 	end
 	local ok, newValue = xpcall(self._processor, parseError, use, innerScope)
 	if ok then
@@ -109,8 +122,10 @@ function class._evaluate<T, S>(
 		return not similar
 	else
 		local errorObj = (newValue :: any) :: Types.Error
-		doCleanup(innerScope)
-		
+		if innerScope then
+			doCleanup(innerScope)
+		end
+
 		-- this needs to be non-fatal, because otherwise it'd disrupt the
 		-- update process
 		External.logErrorNonFatal("callbackError", errorObj)

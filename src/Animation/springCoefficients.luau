@@ -6,7 +6,7 @@ local task = nil -- Disable usage of Roblox's task scheduler
 --[[
 	Returns a 2x2 matrix of coefficients for a given time, damping and angular
 	frequency (aka 'speed').
-	
+
 	Specifically, this returns four coefficients - posPos, posVel, velPos, and
 	velVel - which can be multiplied with position and velocity like so:
 
@@ -32,7 +32,6 @@ local function springCoefficients(
 
 	if damping > 1 then
 		-- overdamped spring
-
 		local alpha = math.sqrt(damping^2 - 1)
 		local negHalf_over_alpha_speed = -0.5 / (alpha * speed)
 		local z1 = speed * (alpha + damping) * -1
@@ -47,7 +46,6 @@ local function springCoefficients(
 
 	elseif damping == 1 then
 		-- critically damped spring
-
 		local time_speed = time * speed
 		local time_speed_neg1 = time_speed * -1
 		local exp = math.exp(time_speed_neg1)
@@ -58,7 +56,6 @@ local function springCoefficients(
 		velVel = exp * (time_speed_neg1 + 1)
 	else
 		-- underdamped spring
-
 		local alpha = speed * math.sqrt(1 - damping^2)
 		local overAlpha = 1 / alpha
 		local exp = math.exp(-1 * time * speed * damping)

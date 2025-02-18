@@ -17,7 +17,7 @@ local change = require(Package.Graph.change)
 local isSimilar = require(Package.Utility.isSimilar)
 local nicknames = require(Package.Utility.nicknames)
 
-type Self<T, S> = Types.Value<T, S>
+type Self<T, S = T> = Types.Value<T, S>
 
 local class = {}
 class.type = "State"
@@ -32,6 +32,7 @@ local function Value<T>(
 	initialValue: T?
 ): Types.Value<T, any>
 	local createdAt = os.clock()
+
 	local self: Self<T, any> = setmetatable(
 		{
 			createdAt = createdAt,
@@ -40,14 +41,14 @@ local function Value<T>(
 			scope = scope,
 			validity = "valid",
 			_EXTREMELY_DANGEROUS_usedAsValue = initialValue
-		}, 
+		},
 		METATABLE
 	) :: any
 	local destroy = function()
 		self.scope = nil
 	end
-	self.oldestTask = destroy
-	nicknames[self.oldestTask] = "Value"
+	self.oldestChore = destroy
+	nicknames[self.oldestChore] = "Value"
 	table.insert(scope, destroy)
 	return self
 end
@@ -65,7 +66,7 @@ function class.set<T, S>(
 end
 
 function class._evaluate<T, S>(
-	_self: Self<T, S>
+	self: Self<T, S>
 ): boolean
 	-- The similarity test is done in advance when the value is set, so this
 	-- should be fine.

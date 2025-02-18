@@ -53,7 +53,7 @@ type Self<T> = Types.Spring<T> & {
 local class = {}
 class.type = "State"
 class.kind = "Spring"
-class.timeliness = "eager"
+class.timeliness = "lazy"
 
 local METATABLE = table.freeze {__index = class}
 
@@ -107,30 +107,30 @@ local function Spring<T>(
 			dependency.dependentSet[self] = nil
 		end
 	end
-	self.oldestTask = destroy
-	nicknames[self.oldestTask] = "Spring"
+	self.oldestChore = destroy
+	nicknames[self.oldestChore] = "Spring"
 	table.insert(scope, destroy)
-	
+
 	if goalState ~= nil then
 		checkLifetime.bOutlivesA(
-			scope, self.oldestTask,
-			goalState.scope, goalState.oldestTask,
+			scope, self.oldestChore,
+			goalState.scope, goalState.oldestChore,
 			checkLifetime.formatters.animationGoal
 		)
 	end
 	local speedState = castToState(speed)
 	if speedState ~= nil then
 		checkLifetime.bOutlivesA(
-			scope, self.oldestTask,
-			speedState.scope, speedState.oldestTask,
+			scope, self.oldestChore,
+			speedState.scope, speedState.oldestChore,
 			checkLifetime.formatters.parameter, "speed"
 		)
 	end
 	local dampingState = castToState(damping)
 	if dampingState ~= nil then
 		checkLifetime.bOutlivesA(
-			scope, self.oldestTask,
-			dampingState.scope, dampingState.oldestTask,
+			scope, self.oldestChore,
+			dampingState.scope, dampingState.oldestChore,
 			checkLifetime.formatters.parameter, "damping"
 		)
 	end
@@ -180,15 +180,19 @@ end
 
 function class.setVelocity<T>(
 	self: Self<T>,
-	newValue: T
+	newValue: T?
 ): ()
 	evaluate(self, false) -- ensure the _active params are up to date
-	local newType = typeof(newValue)
-	if newType ~= self._activeType then
-		External.logError("springTypeMismatch", nil, newType, self._activeType)
+	if newValue then
+		local newType = typeof(newValue)
+		if newType ~= self._activeType then
+			External.logError("springTypeMismatch", nil, newType, self._activeType)
+		end
+		self._activeStartV = unpackType(newValue, newType)
+	else
+		self._activeStartV = table.create(self._activeNumSprings, 0)
 	end
 	self._activeStartP = table.clone(self._activeLatestP)
-	self._activeStartV = unpackType(newValue, newType)
 	self._stopwatch:zero()
 	self._stopwatch:unpause()
 	change(self)
@@ -198,26 +202,27 @@ function class._evaluate<T>(
 	self: Self<T>
 ): boolean
 	local goal = castToState(self._goal)
+
 	-- Allow non-state goals to pass through transparently.
 	if goal == nil then
 		self._EXTREMELY_DANGEROUS_usedAsValue = self._goal :: T
 		return false
 	end
-	-- depend(self, goal)
-	local nextFrameGoal = peek(goal)
+
+	local nextFrameGoal = depend(self, goal)
+
+	local stopwatch = self._stopwatch :: Stopwatch.Stopwatch
+	local elapsed = depend(self, stopwatch)
+
 	-- Protect against NaN goals.
 	if nextFrameGoal ~= nextFrameGoal then
 		External.logWarn("springNanGoal")
 		return false
 	end
+
 	local nextFrameGoalType = typeof(nextFrameGoal)
 	local discontinuous = nextFrameGoalType ~= self._activeType
 
-	local stopwatch = self._stopwatch :: Stopwatch.Stopwatch
-	local elapsed = peek(stopwatch)
-	depend(self, stopwatch)
-
-	local oldValue = self._EXTREMELY_DANGEROUS_usedAsValue
 	local newValue: T
 
 	if discontinuous then
@@ -225,16 +230,14 @@ function class._evaluate<T>(
 		-- graph, even if simulation is logically one frame behind, because it
 		-- makes the whole graph behave more consistently.
 		newValue = nextFrameGoal
-	elseif elapsed <= 0 then
-		newValue = oldValue
 	else
 		-- Calculate spring motion.
 		-- IMPORTANT: use the parameters from last frame, not this frame. We're
 		-- integrating the motion that happened over the last frame, after all.
 		-- The stopwatch will have captured the length of time needed correctly.
 		local posPos, posVel, velPos, velVel = springCoefficients(
-			elapsed, 
-			self._activeDamping, 
+			elapsed,
+			self._activeDamping,
 			self._activeSpeed
 		)
 		local isMoving = false
@@ -257,14 +260,11 @@ function class._evaluate<T>(
 			self._activeLatestV[index] = latestV
 		end
 		-- Sleep and snap to goal if the motion has decayed to a negligible amount.
-		if not isMoving then
-			for index = 1, self._activeNumSprings do
-				self._activeLatestP[index] = self._activeTargetP[index]
-			end
-			-- TODO: figure out how to do sleeping correctly for single frame
-			-- changes
-			-- stopwatch:pause()
-			-- stopwatch:zero()
+		if not isMoving and stopwatch:isPlaying() then
+			self._activeLatestP = table.clone(self._activeTargetP)
+			self._activeLatestV = table.create(self._activeNumSprings, 0)
+			stopwatch:pause()
+			stopwatch:zero()
 		end
 		-- Pack springs into final value.
 		newValue = packType(self._activeLatestP, self._activeType) :: any
@@ -305,6 +305,7 @@ function class._evaluate<T>(
 	-- Don't need to use the similarity test here because this code doesn't
 	-- deal with tables, and NaN is already guarded against, so the similarity
 	-- test doesn't actually add any new safety here.
+	local oldValue = self._EXTREMELY_DANGEROUS_usedAsValue
 	self._EXTREMELY_DANGEROUS_usedAsValue = newValue
 	return oldValue ~= newValue
 end

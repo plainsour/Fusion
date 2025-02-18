@@ -45,26 +45,28 @@ end
 --[[
    Sends an immediate task to the external provider. Throws if none is set.
 ]]
-function External.doTaskImmediate(
-	resume: () -> ()
+function External.doChoreImmediate(
+	resume: (...any) -> (),
+	...: any
 )
 	if currentProvider == nil then
 		External.logError("noTaskScheduler")
 	else
-		currentProvider.doTaskImmediate(resume)
+		currentProvider.doChoreImmediate(resume, ...)
 	end
 end
 
 --[[
 	Sends a deferred task to the external provider. Throws if none is set.
 ]]
-function External.doTaskDeferred(
-	resume: () -> ()
+function External.doChoreDeferred(
+	resume: (...any) -> (),
+	...: any
 )
 	if currentProvider == nil then
 		External.logError("noTaskScheduler")
 	else
-		currentProvider.doTaskDeferred(resume)
+		currentProvider.doChoreDeferred(resume, ...)
 	end
 end
 
@@ -115,7 +117,7 @@ end
 	Returns a function that can be used to disconnect later.
 
 	Callbacks are given the current number of seconds since an arbitrary epoch.
-	
+
 	TODO: This epoch may change between providers. We could investigate ways
 	of allowing providers to co-operate to keep the epoch the same, so that
 	monotonicity can be better preserved.

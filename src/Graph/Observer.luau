@@ -18,12 +18,13 @@ local checkLifetime = require(Package.Memory.checkLifetime)
 local castToGraph = require(Package.Graph.castToGraph)
 local depend = require(Package.Graph.depend)
 local evaluate = require(Package.Graph.evaluate)
+local peek = require(Package.State.peek)
 -- Utility
 local nicknames = require(Package.Utility.nicknames)
 
 type Self = Types.Observer & {
 	_watchingGraph: Types.GraphObject?,
-	_changeListeners: {[unknown]: () -> ()}
+	_changeListeners: {[unknown]: (peekedValue: any) -> ()}
 }
 
 local class = {}
@@ -57,14 +58,14 @@ local function Observer(
 			dependency.dependentSet[self] = nil
 		end
 	end
-	self.oldestTask = destroy
-	nicknames[self.oldestTask] = "Observer"
+	self.oldestChore = destroy
+	nicknames[self.oldestChore] = "Observer"
 	table.insert(scope, destroy)
 
 	if self._watchingGraph ~= nil then
 		checkLifetime.bOutlivesA(
-			scope, self.oldestTask,
-			self._watchingGraph.scope, self._watchingGraph.oldestTask,
+			scope, self.oldestChore,
+			self._watchingGraph.scope, self._watchingGraph.oldestChore,
 			checkLifetime.formatters.observer
 		)
 	end
@@ -78,15 +79,15 @@ end
 
 function class.onBind(
 	self: Self,
-	callback: () -> ()
+	callback: (peekedValue: any) -> ()
 ): () -> ()
-	External.doTaskImmediate(callback)
+	External.doChoreImmediate(callback, peek(self._watchingGraph))
 	return self:onChange(callback)
 end
 
 function class.onChange(
 	self: Self,
-	callback: () -> ()
+	callback: (peekedValue: any) -> ()
 ): () -> ()
 	local uniqueIdentifier = table.freeze {}
 	self._changeListeners[uniqueIdentifier] = callback
@@ -98,11 +99,9 @@ end
 function class._evaluate(
 	self: Self
 ): ()
-	if self._watchingGraph ~= nil then
-		depend(self, self._watchingGraph)
-	end
+	local value = depend(self, self._watchingGraph)
 	for _, callback in self._changeListeners do
-		External.doTaskImmediate(callback)
+		External.doChoreImmediate(callback, value)
 	end
 	return true
 end

@@ -54,7 +54,7 @@ end
 
 --[[
 	Called at the final moment before a scope is poisoned or added to the scope
-	pool, after all cleanup tasks have completed, so that debuggers can erase 
+	pool, after all cleanup tasks have completed, so that debuggers can erase
 	the scope from internal trackers. Note that, due to scope pooling and user
 	code, never assume that this correlates with garbage collection events.
 ]]

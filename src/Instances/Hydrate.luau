@@ -19,7 +19,7 @@ local function Hydrate(
 	return function(
 		props: Types.PropertyTable
 	): Instance
-	
+
 		table.insert(scope, target)
 		applyInstanceProps(scope, props, target)
 		return target

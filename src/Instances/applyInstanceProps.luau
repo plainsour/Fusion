@@ -81,7 +81,7 @@ local function bindProperty(
 		local value = value :: Types.StateObject<unknown>
 		checkLifetime.bOutlivesA(
 			scope, instance,
-			value.scope, value.oldestTask,
+			value.scope, value.oldestChore,
 			checkLifetime.formatters.boundProperty, property
 		)
 		-- value is a state object - bind to changes

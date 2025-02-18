@@ -13,7 +13,6 @@ local External = require(Package.External)
 -- Graph
 local depend = require(Package.Graph.depend)
 -- State
-local peek = require(Package.State.peek)
 local castToState = require(Package.State.castToState)
 local ForTypes = require(Package.State.For.ForTypes)
 -- Memory
@@ -78,10 +77,10 @@ local function Disassembly<S, KI, KO, VI, VO>(
 			end
 		end
 	end
-	self.oldestTask = destroy
-	nicknames[self.oldestTask] = "For (internal disassembler)"
+	self.oldestChore = destroy
+	nicknames[self.oldestChore] = "For (internal disassembler)"
 	table.insert(scope, destroy)
-	
+
 	return self
 end
 
@@ -130,6 +129,7 @@ function class._evaluate<S, KI, KO, VI, VO>(
 ): boolean
 	local outerScope = self.scope :: S & Types.Scope<unknown>
 	local inputState = castToState(self._inputTable)
+	local inputTable: {[KI]: VI}
 	if inputState ~= nil then
 		if inputState.scope == nil then
 			External.logError(
@@ -139,59 +139,81 @@ function class._evaluate<S, KI, KO, VI, VO>(
 				`the For object that is watching it`
 			)
 		end
-		depend(self, inputState)
+		inputTable = depend(self, inputState) :: {[KI]: VI}
+	else
+		inputTable = self._inputTable :: {[KI]: VI}
 	end
 
 	local pendingPairs = {} :: {[KI]: VI}
-	for key, value in peek(self._inputTable) do
+	for key, value in inputTable do
 		pendingPairs[key] = value
 	end
 
+	local unmatchedPairs = {} :: {ForTypes.SubObject<S, KI, KO, VI, VO>}
 	local newSubObjects = {} :: typeof(self._subObjects)
 
 	for subObject in self._subObjects do
-		local reused = false
 		local oldInputKey = subObject.inputKey
 		local oldInputValue = subObject.inputValue
-		local newInputKey: KI
+		local newInputKey: KI, newInputValue: VI
+
 		-- Reuse when the keys are identical.
 		if not subObject.roamKeys and pendingPairs[oldInputKey] ~= nil then
-			reused = true
-			newInputKey = oldInputKey
+			newInputKey, newInputValue = oldInputKey, pendingPairs[oldInputKey]
 		else -- Try and reuse some other pair instead.
-			for pendingKey, pendingValue in pendingPairs do
-				reused = true
-				newInputKey = pendingKey
-				if subObject.roamValues then
-					break
+			if subObject.roamValues then
+				table.insert(unmatchedPairs, subObject)
+				continue
+			else
+				for pendingKey, pendingValue in pendingPairs do
+					if pendingValue == oldInputValue then
+						-- If the values are the same, then no need to update those,
+						-- so prefer this choice to any other.
+						newInputKey, newInputValue = pendingKey, pendingValue
+						break 
+					end
 				end
-				if pendingValue == oldInputValue then
-					-- If the values are the same, then no need to update those,
-					-- so prefer this choice to any other.
-					break 
+				if not newInputKey then
+					table.insert(unmatchedPairs, subObject)
+					continue
 				end
 			end
 		end
-		if reused then
-			local newInputValue = pendingPairs[newInputKey]
+
+		newSubObjects[subObject] = true
+		if newInputKey ~= oldInputKey then
+			subObject.inputKey = newInputKey
+			subObject:invalidateInputKey()
+		end
+		if newInputValue ~= oldInputValue then
+			subObject.inputValue = newInputValue
+			subObject:invalidateInputValue()
+		end
+		pendingPairs[newInputKey] = nil
+	end
+
+	for _, subObject in unmatchedPairs do
+		local oldInputKey = subObject.inputKey
+		local oldInputValue = subObject.inputValue
+		local newInputKey: KI?, newInputValue: VI? = next(pendingPairs)
+		if newInputKey then
 			newSubObjects[subObject] = true
 			if newInputKey ~= oldInputKey then
-				subObject.inputKey = newInputKey
+				subObject.inputKey = newInputKey :: KI
 				subObject:invalidateInputKey()
 			end
 			if newInputValue ~= oldInputValue then
-				subObject.inputValue = newInputValue
+				subObject.inputValue = newInputValue :: VI
 				subObject:invalidateInputValue()
 			end
 			pendingPairs[newInputKey] = nil
-		else -- Too many sub objects for the number of pairs.
+		else
 			if subObject.maybeScope ~= nil then
 				doCleanup(subObject.maybeScope)
 				subObject.maybeScope = nil
 			end
 		end
 	end
-
 	-- Generate new objects if needed to cover the remaining pending pairs.
 	for pendingKey, pendingValue in pendingPairs do
 		local subObject = self._constructor(deriveScope(outerScope), pendingKey, pendingValue)

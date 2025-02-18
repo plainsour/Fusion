@@ -37,7 +37,7 @@ local function Out(
 				if not ok then
 					External.logError("invalidOutProperty", nil, applyTo.ClassName, propertyName)
 				end
-	
+
 				if not castToState(value) then
 					External.logError("invalidOutType")
 				end
@@ -48,7 +48,7 @@ local function Out(
 				local value = value :: Types.Value<unknown>
 				checkLifetime.bOutlivesA(
 					scope, applyTo, 
-					value.scope, value.oldestTask,
+					value.scope, value.oldestChore,
 					checkLifetime.formatters.propertyOutputsTo, propertyName
 				)
 

@@ -25,11 +25,11 @@ local function deriveScopeImpl<T>(
 	if methods ~= nil then
 		metatable = table.clone(metatable)
 		metatable.__index = merge(
-			true, {}, 
-			metatable.__index, 
+			true, {},
+			metatable.__index,
 			merge(
 				false, {},
-				methods, 
+				methods,
 				...
 			)
 		)

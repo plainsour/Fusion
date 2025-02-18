@@ -36,23 +36,23 @@ export type Animatable =
 	Vector3 |
 	Vector3int16
 
--- A task which can be accepted for cleanup.
-export type Task =
+-- A chore which can be accepted for cleanup.
+export type Chore =
 	Instance |
 	RBXScriptConnection |
 	thread |
 	() -> () |
 	{destroy: (unknown) -> ()} |
 	{Destroy: (unknown) -> ()} |
-	{Task}
+	{Chore}
 
--- A scope of tasks to clean up.
-export type Scope<Constructors = any> = {Task} & Constructors
+-- A scope of chores to clean up.
+export type Scope<Constructors = any> = {Chore} & Constructors
 
 -- An object which uses a scope to dictate how long it lives.
 export type ScopedObject = {
 	scope: Scope<unknown>?,
-	oldestTask: unknown
+	oldestChore: unknown
 }
 
 -- Script-readable version information.
@@ -165,7 +165,7 @@ export type TweenConstructor = <T>(
 export type Spring<T> = StateObject<T>  & {
 	kind: "Spring",
 	setPosition: (Spring<T>, newPosition: T) -> (),
-	setVelocity: (Spring<T>, newVelocity: T) -> (),
+	setVelocity: (Spring<T>, newVelocity: T?) -> (),
 	addVelocity: (Spring<T>, deltaVelocity: T) -> ()
 }
 export type SpringConstructor = <T>(
@@ -249,11 +249,11 @@ export type Fusion = {
 	Contextual: ContextualConstructor,
 	Safe: Safe,
 
-	doCleanup: (Task) -> (),
+	doCleanup: (Chore) -> (),
 	scoped: ScopedConstructor,
 	deriveScope: DeriveScopeConstructor,
 	innerScope: DeriveScopeConstructor,
-	insert: <Tasks...>(scope: Scope<unknown>, Tasks...) -> Tasks...,
+	insert: <Chores...>(scope: Scope<unknown>, Chores...) -> Chores...,
 
 	peek: Use,
 	Value: ValueConstructor,
@@ -291,10 +291,10 @@ export type ExternalProvider = {
 		errorString: string
 	) -> (),
 
-	doTaskImmediate: (
+	doChoreImmediate: (
 		resume: () -> ()
 	) -> (),
-	doTaskDeferred: (
+	doChoreDeferred: (
 		resume: () -> ()
 	) -> (),
 	startScheduler: () -> (),

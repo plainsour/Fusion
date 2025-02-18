@@ -4,15 +4,15 @@
 local task = nil -- Disable usage of Roblox's task scheduler
 
 --[[
-	Inserts clean up tasks passed in to the scope.
+	Inserts clean up chores passed in to the scope.
 ]]
 local Package = script.Parent.Parent
 local Types = require(Package.Types)
 
-local function insert<Tasks...>(
+local function insert<Chores...>(
 	scope: Types.Scope<unknown>,
-	...: Tasks...
-): Tasks...
+	...: Chores...
+): Chores...
 	for index = 1, select("#", ...) do
 		table.insert(scope, select(index, ...))
 	end

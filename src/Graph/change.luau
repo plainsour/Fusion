@@ -49,8 +49,6 @@ local function change(
 					done = false
 					table.insert(invalidateList, dependent)
 					table.insert(searchInNext, dependent)
-				elseif dependent.validity == "busy" then
-					return External.logError("infiniteLoop")
 				end
 			end
 		end
@@ -66,6 +64,7 @@ local function change(
 			table.insert(eagerList, invalidateTarget)
 		end
 	end
+
 	-- If objects are not executed in order of creations, then dynamic graphs
 	-- may experience 'glitches' where nested graph objects see intermediate
 	-- values before being destroyed.
@@ -73,6 +72,7 @@ local function change(
 	table.sort(eagerList, function(a, b)
 		return a.createdAt < b.createdAt
 	end)
+
 	for _, eagerTarget in eagerList do
 		evaluate(eagerTarget, false)
 	end

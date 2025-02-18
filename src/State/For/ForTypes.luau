@@ -11,8 +11,6 @@ local Package = script.Parent.Parent.Parent
 local Types = require(Package.Types)
 
 export type SubObject<S, KI, KO, VI, VO> = {
-	-- Not all sub objects need to store a scope, for example if the scope
-	-- remains empty, it'll be given back to the scope pool.
 	maybeScope: Types.Scope<S>?,
 	inputKey: KI,
 	inputValue: VI,

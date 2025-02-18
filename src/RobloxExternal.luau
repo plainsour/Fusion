@@ -21,19 +21,21 @@ RobloxExternal.policies = {
 --[[
    Sends an immediate task to the external provider. Throws if none is set.
 ]]
-function RobloxExternal.doTaskImmediate(
-	resume: () -> ()
+function RobloxExternal.doChoreImmediate(
+	resume: (...any) -> (),
+	...: any
 )
-   task.spawn(resume)
+   task.spawn(resume, ...)
 end
 
 --[[
 	Sends a deferred task to the external provider. Throws if none is set.
 ]]
-function RobloxExternal.doTaskDeferred(
-	resume: () -> ()
+function RobloxExternal.doChoreDeferred(
+	resume: (...any) -> (),
+	...: any
 )
-	task.defer(resume)
+	task.defer(resume, ...)
 end
 
 --[[

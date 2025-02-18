@@ -87,14 +87,14 @@ local function Tween<T>(
 			dependency.dependentSet[self] = nil
 		end
 	end
-	self.oldestTask = destroy
-	nicknames[self.oldestTask] = "Tween"
+	self.oldestChore = destroy
+	nicknames[self.oldestChore] = "Tween"
 	table.insert(scope, destroy)
 
 	if goalState ~= nil then
 		checkLifetime.bOutlivesA(
-			scope, self.oldestTask,
-			goalState.scope, goalState.oldestTask,
+			scope, self.oldestChore,
+			goalState.scope, goalState.oldestChore,
 			checkLifetime.formatters.animationGoal
 		)
 	end
@@ -102,8 +102,8 @@ local function Tween<T>(
 	local tweenInfoState = castToState(tweenInfo)
 	if tweenInfoState ~= nil then
 		checkLifetime.bOutlivesA(
-			scope, self.oldestTask,
-			tweenInfoState.scope, tweenInfoState.oldestTask,
+			scope, self.oldestChore,
+			tweenInfoState.scope, tweenInfoState.oldestChore,
 			checkLifetime.formatters.parameter, "tween info"
 		)
 	end
@@ -135,7 +135,7 @@ function class._evaluate<T>(
 	local tweenInfo = peek(self._tweenInfo) :: TweenInfo
 	-- Restart animation when the goal changes, or if the tween info changes
 	-- partway through another animation.
-	if 
+	if
 		self._activeTo ~= newTweenTo or
 		(self._activeElapsed < self._activeDuration and self._activeTweenInfo ~= tweenInfo)
 	then

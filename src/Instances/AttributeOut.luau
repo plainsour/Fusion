@@ -34,7 +34,7 @@ local function AttributeOut(
 				applyTo: Instance
 			)
 				local event = applyTo:GetAttributeChangedSignal(attributeName)
-	
+
 				if not castToState(value) then
 					External.logError("invalidAttributeOutType")
 				end
@@ -45,7 +45,7 @@ local function AttributeOut(
 				local value = value :: Types.Value<unknown>
 				checkLifetime.bOutlivesA(
 					scope, applyTo,
-					value.scope, value.oldestTask,
+					value.scope, value.oldestChore,
 					checkLifetime.formatters.attributeOutputsTo, attributeName
 				)
 
