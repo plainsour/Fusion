@@ -47,11 +47,6 @@ local function Computed<T, S>(
 	destructor: unknown?
 ): Types.Computed<T>
 	local createdAt = os.clock()
-	if typeof(scope) == "function" then
-		External.logError("scopeMissing", nil, "Computeds", "myScope:Computed(function(use, scope) ... end)")
-	elseif destructor ~= nil then
-		External.logWarn("destructorRedundant", "Computed")
-	end
 	local self: Self<T, S> = setmetatable(
 		{
 			createdAt = createdAt,
@@ -79,13 +74,6 @@ local function Computed<T, S>(
 	nicknames[self.oldestChore] = "Computed"
 	table.insert(scope, destroy)
 	return self
-end
-
-function class.get<T, S>(
-	_self: Self<T, S>
-): never
-	External.logError("stateGetWasRemoved")
-	return never()
 end
 
 function class._evaluate<T, S>(

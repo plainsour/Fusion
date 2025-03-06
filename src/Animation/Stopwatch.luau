@@ -61,7 +61,7 @@ local function Stopwatch(
 			_measureTimeSince = 0, -- this should be set on unpause
 			_playing = false,
 			_zeroFlag = true,
-			_timer = timer
+			_timer = timer,
 		},
 		METATABLE
 	) :: any
@@ -112,7 +112,6 @@ function class.unpause(
 		change(self)
 	end
 end
-
 
 function class.isPlaying(
 	self: Self

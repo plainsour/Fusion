@@ -81,7 +81,7 @@ function class.onBind(
 	self: Self,
 	callback: (peekedValue: any) -> ()
 ): () -> ()
-	External.doChoreImmediate(callback, peek(self._watchingGraph))
+	External.doChoreImmediate(callback)
 	return self:onChange(callback)
 end
 
@@ -99,9 +99,8 @@ end
 function class._evaluate(
 	self: Self
 ): ()
-	local value = depend(self, self._watchingGraph)
 	for _, callback in self._changeListeners do
-		External.doChoreImmediate(callback, value)
+		External.doChoreImmediate(callback)
 	end
 	return true
 end
