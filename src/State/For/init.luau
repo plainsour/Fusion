@@ -14,7 +14,6 @@ local depend = require(Package.Graph.depend)
 -- State
 local ForTypes = require(Package.State.For.ForTypes)
 -- Utility
-local never = require(Package.Utility.never)
 local nicknames = require(Package.Utility.nicknames)
 
 local Disassembly = require(Package.State.For.Disassembly)

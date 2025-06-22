@@ -55,10 +55,14 @@ end
 
 function class.set<T, S>(
 	self: Self<T, S>,
-	newValue: S
+	newValue: S,
+	force: boolean?
 ): S
 	local oldValue = self._EXTREMELY_DANGEROUS_usedAsValue
-	if not isSimilar(oldValue, newValue) then
+	if (
+		not isSimilar(oldValue, newValue)
+		or force
+	) then
 		self._EXTREMELY_DANGEROUS_usedAsValue = newValue :: any
 		change(self)
 	end

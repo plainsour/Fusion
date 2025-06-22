@@ -252,6 +252,12 @@ function class._evaluate<T>(
 				External.logWarn("springNanMotion")
 				latestD, latestV = 0, 0
 			end
+			if math.abs(latestD) < EPSILON then
+				latestD = 0
+			end
+			if math.abs(latestV) < EPSILON then
+				latestV = 0
+			end
 			if math.abs(latestD) > EPSILON or math.abs(latestV) > EPSILON then
 				isMoving = true
 			end
@@ -259,10 +265,15 @@ function class._evaluate<T>(
 			self._activeLatestP[index] = latestP
 			self._activeLatestV[index] = latestV
 		end
+
 		-- Sleep and snap to goal if the motion has decayed to a negligible amount.
 		if not isMoving and stopwatch:isPlaying() then
 			self._activeLatestP = table.clone(self._activeTargetP)
 			self._activeLatestV = table.create(self._activeNumSprings, 0)
+
+			self._activeStartP = table.clone(self._activeTargetP)
+			self._activeStartV = table.create(self._activeNumSprings, 0)
+
 			stopwatch:pause()
 			stopwatch:zero()
 		end

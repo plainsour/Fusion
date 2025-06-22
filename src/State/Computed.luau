@@ -17,7 +17,6 @@ local External = require(Package.External)
 local parseError = require(Package.Logging.parseError)
 -- Utility
 local isSimilar = require(Package.Utility.isSimilar)
-local never = require(Package.Utility.never)
 -- Graph
 local depend = require(Package.Graph.depend)
 -- State
