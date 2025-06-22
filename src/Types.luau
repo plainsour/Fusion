@@ -254,6 +254,7 @@ export type Fusion = {
 	deriveScope: DeriveScopeConstructor,
 	innerScope: DeriveScopeConstructor,
 	insert: <Chores...>(scope: Scope<unknown>, Chores...) -> Chores...,
+	detach: <Chores...>(scope: Scope<unknown>, Chores...) -> Chores...,
 
 	peek: Use,
 	Value: ValueConstructor,
