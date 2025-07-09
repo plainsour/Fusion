@@ -49,6 +49,7 @@ local Fusion: Fusion = table.freeze {
 	doCleanup = require(script.Memory.doCleanup),
 	innerScope = require(script.Memory.innerScope),
 	insert = require(script.Memory.insert),
+	detach = require(script.Memory.detach),
 	scoped = require(script.Memory.scoped),
 
 	-- Graph
