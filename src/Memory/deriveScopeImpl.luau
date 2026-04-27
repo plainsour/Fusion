@@ -21,7 +21,7 @@ local function deriveScopeImpl<T>(
 	methods: {[unknown]: unknown}?,
 	...: {[unknown]: unknown}
 ): any
-	local metatable = getmetatable(existing)
+	local metatable = getmetatable(existing :: any)
 	if methods ~= nil then
 		metatable = table.clone(metatable)
 		metatable.__index = merge(
