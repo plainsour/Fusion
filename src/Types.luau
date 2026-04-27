@@ -101,15 +101,17 @@ export type Use = <T>(target: UsedAs<T>) -> T
 
 -- A state object whose value can be set at any time by the user.
 export type Value<T, S = T> = StateObject<T> & {
-	kind: "State",
+	kind: "Value",
 	timeliness: "lazy",
  	set: (Value<T, S>, newValue: S, force: boolean?) -> S,
 	____phantom_setType: (never) -> S -- phantom data so this contains S
 }
-export type ValueConstructor = <T>(
+export type ValueConstructor = (<T>(
 	scope: Scope<unknown>,
-	initialValue: T?
-) -> Value<T, any>
+	initialValue: T
+) -> Value<T, any>) & ((
+	scope: Scope<unknown>
+) -> Value<nil, any>)
 
 -- A state object whose value is derived from other objects using a callback.
 export type Computed<T> = StateObject<T> & {
