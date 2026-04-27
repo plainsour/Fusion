@@ -44,6 +44,8 @@ export type Chore =
 	() -> () |
 	{destroy: (unknown) -> ()} |
 	{Destroy: (unknown) -> ()} |
+	{disconnect: (unknown) -> ()} |
+	{Disconnect: (unknown) -> ()} |
 	{Chore}
 
 -- A scope of chores to clean up.

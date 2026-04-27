@@ -60,7 +60,12 @@ local function doCleanup(
 		chore()
 
 	elseif typeof(chore) == "table" then
-		local chore = (chore :: any) :: {Destroy: (...unknown) -> (...unknown)?, destroy: (...unknown) -> (...unknown)?}
+		local chore = (chore :: any) :: {
+			destroy: (...unknown) -> (...unknown)?,
+			Destroy: (...unknown) -> (...unknown)?,
+			disconnect: (...unknown) -> (...unknown)?,
+			Disconnect: (...unknown) -> (...unknown)?,
+		}
 
 		-- case 5: destroy() function
 		if typeof(chore.destroy) == "function" then
@@ -72,7 +77,17 @@ local function doCleanup(
 			local chore = (chore :: any) :: {Destroy: (...unknown) -> (...unknown)}
 			chore:Destroy()
 
-		-- case 7: table of chores with an array part
+		-- case 7: disconnect() function
+		elseif typeof(chore.disconnect) == "function" then
+			local chore = (chore :: any) :: {disconnect: (...unknown) -> (...unknown)}
+			chore:disconnect()
+
+		-- case 8: Disconnect() function
+		elseif typeof(chore.Disconnect) == "function" then
+			local chore = (chore :: any) :: {Disconnect: (...unknown) -> (...unknown)}
+			chore:Disconnect()
+
+		-- case 9: table of chores with an array part
 		elseif chore[1] ~= nil then
 			local chore = chore :: {Types.Chore}
 
