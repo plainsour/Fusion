@@ -26,7 +26,7 @@ local METATABLE = table.freeze {__index = class}
 local WEAK_KEYS_METATABLE = table.freeze {__mode = "k"}
 
 local function Contextual<T>(
-	defaultValue: T
+	defaultValue: T?
 ): Types.Contextual<T>
 	local self: Self<T> = setmetatable(
 		{
