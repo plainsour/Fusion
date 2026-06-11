@@ -65,14 +65,13 @@ export type Version = {
 }
 
 -- An object which stores a value scoped in time.
+export type ContextualIsMethods = {
+	during: <R, A...>(ContextualIsMethods, (A...) -> R, A...) -> R
+}
 export type Contextual<T> = {
 	type: "Contextual",
 	now: (Contextual<T>) -> T,
 	is: (Contextual<T>, T) -> ContextualIsMethods
-}
-
-type ContextualIsMethods = {
-	during: <R, A...>(ContextualIsMethods, (A...) -> R, A...) -> R
 }
 
 -- A graph object which can have dependencies and dependencies.
@@ -144,16 +143,17 @@ export type ForValuesConstructor =  <K, VI, VO, S>(
 ) -> For<K, VO>
 
 -- An object which can listen for updates on another state object.
-export type Observer = GraphObject & {
+export type ObserverCallback<T> = ((peekedValue: T) -> ()) | (() -> ())
+export type Observer<T = unknown> = GraphObject & {
 	type: "Observer",
 	timeliness: "eager",
-	onChange: (Observer, callback: () -> ()) -> (() -> ()),
-	onBind: (Observer, callback: () -> ()) -> (() -> ())
+	onChange: (Observer<T>, callback: ObserverCallback<T>) -> (() -> ()),
+	onBind: (Observer<T>, callback: ObserverCallback<T>) -> (() -> ())
 }
-export type ObserverConstructor = (
+export type ObserverConstructor = <T>(
 	scope: Scope<unknown>,
-	watching: unknown
-) -> Observer
+	watching: UsedAs<T>
+) -> Observer<T>
 
 -- A state object which follows another state object using tweens.
 export type Tween<T> = StateObject<T> & {
@@ -299,10 +299,12 @@ export type ExternalProvider = {
 	) -> (),
 
 	doChoreImmediate: (
-		resume: () -> ()
+		resume: (...any) -> (),
+		...any
 	) -> (),
 	doChoreDeferred: (
-		resume: () -> ()
+		resume: (...any) -> (),
+		...any
 	) -> (),
 	startScheduler: () -> (),
 	stopScheduler: () -> ()

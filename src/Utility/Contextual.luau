@@ -26,7 +26,7 @@ local METATABLE = table.freeze {__index = class}
 local WEAK_KEYS_METATABLE = table.freeze {__mode = "k"}
 
 local function Contextual<T>(
-	defaultValue: T?
+	defaultValue: T
 ): Types.Contextual<T>
 	local self: Self<T> = setmetatable(
 		{
@@ -63,14 +63,14 @@ end
 function class.is<T>(
 	self: Self<T>,
 	newValue: T
-)
-	local methods = {}
+): Types.ContextualIsMethods
+	local methods = {} :: Types.ContextualIsMethods
 
-	function methods.during<T, A...>(
+	function methods.during<R, A...>(
 		_: any, -- during is called with colon syntax but we don't care
-		callback: (A...) -> T,
+		callback: (A...) -> R,
 		...: A...
-	): T
+	): R
 		local thread = coroutine.running()
 		local prevValue = self._valuesNow[thread]
 		-- Storing the value in this format allows us to distinguish storing
@@ -81,11 +81,11 @@ function class.is<T>(
 		if not ok then
 			External.logError("callbackError", value :: any)
 		end
-		return value
+		return value :: R
 	end
 
 	return methods
 end
 
 table.freeze(class)
-return Contextual
+return Contextual :: Types.ContextualConstructor

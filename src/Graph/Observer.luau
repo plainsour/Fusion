@@ -22,9 +22,9 @@ local peek = require(Package.State.peek)
 -- Utility
 local nicknames = require(Package.Utility.nicknames)
 
-type Self = Types.Observer & {
+type Self = Types.Observer<any> & {
 	_watchingGraph: Types.GraphObject?,
-	_changeListeners: {[unknown]: (peekedValue: any) -> ()}
+	_changeListeners: {[unknown]: Types.ObserverCallback<any>}
 }
 
 local class = {}
@@ -37,7 +37,7 @@ local METATABLE = table.freeze {__index = class}
 local function Observer(
 	scope: Types.Scope<unknown>,
 	watching: unknown
-): Types.Observer
+): Types.Observer<any>
 	local createdAt = os.clock()
 
 	local self: Self = setmetatable(
@@ -79,7 +79,7 @@ end
 
 function class.onBind(
 	self: Self,
-	callback: (peekedValue: any) -> ()
+	callback: Types.ObserverCallback<any>
 ): () -> ()
 	External.doChoreImmediate(callback, peek(self._watchingGraph))
 	return self:onChange(callback)
@@ -87,7 +87,7 @@ end
 
 function class.onChange(
 	self: Self,
-	callback: (peekedValue: any) -> ()
+	callback: Types.ObserverCallback<any>
 ): () -> ()
 	local uniqueIdentifier = table.freeze {}
 	self._changeListeners[uniqueIdentifier] = callback

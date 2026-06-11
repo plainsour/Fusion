@@ -18,7 +18,7 @@ export type Computed<T> = Types.Computed<T>
 export type Contextual<T> = Types.Contextual<T>
 export type GraphObject = Types.GraphObject
 export type For<KO, VO> = Types.For<KO, VO>
-export type Observer = Types.Observer
+export type Observer<T = unknown> = Types.Observer<T>
 export type PropertyTable = Types.PropertyTable
 export type Scope<Constructors = Fusion> = Types.Scope<Constructors>
 export type ScopedObject = Types.ScopedObject
