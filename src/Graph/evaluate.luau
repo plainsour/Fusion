@@ -41,7 +41,13 @@ local function evaluate(
 				target.dependencySet[dependency] = nil
 			end
 			target.validity = "busy"
-			targetMeaningfullyChanged = target:_evaluate() or firstEvaluation
+			local ok, result = pcall(target._evaluate, target)
+			if not ok then
+				target.validity = "invalid"
+				target.lastChange = nil
+				error(result, 0)
+			end
+			targetMeaningfullyChanged = result or firstEvaluation
 		end
 		if targetMeaningfullyChanged then
 			target.lastChange = os.clock()
