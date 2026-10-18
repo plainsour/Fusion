@@ -18,6 +18,20 @@ local depend = function<T>(
 	dependent: Types.GraphObject,
 	dependency: Types.UsedAs<T> | Types.GraphObject
 ): any
+	local dependencySet = dependent.dependencySet
+	if dependencySet[dependency :: any] ~= nil then
+		local dependency = dependency :: Types.GraphObject
+		if dependency.validity ~= "valid" or dependency.lastChange == nil then
+			evaluate(dependency, false)
+		end
+		dependency.dependentSet[dependent] = true
+		dependencySet[dependency] = true
+		if (dependency :: any).type == "State" then
+			return (dependency :: Types.StateObject<T>)._EXTREMELY_DANGEROUS_usedAsValue :: T
+		else
+			return nil
+		end
+	end
 	if castToGraph(dependency) then
 		local dependency = dependency :: Types.GraphObject
 		-- Ensure dependencies are evaluated and up-to-date
