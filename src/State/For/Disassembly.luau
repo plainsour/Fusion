@@ -22,7 +22,7 @@ local deriveScope = require(Package.Memory.deriveScope)
 local nameOf = require(Package.Utility.nameOf)
 local nicknames = require(Package.Utility.nicknames)
 
-type Self<S, KI, KO, VI, VO> = ForTypes.Disassembly<S, KI, KO, VI, KO> & {
+type Self<S, KI, KO, VI, VO> = ForTypes.Disassembly<S, KI, KO, VI, VO> & {
 	scope: (S & Types.Scope<unknown>)?,
 	_inputTable: Types.UsedAs<{[KI]: VI}>,
 	_constructor: (
@@ -49,7 +49,7 @@ local function Disassembly<S, KI, KO, VI, VO>(
 		initialKey: KI,
 		initialValue: VI
 	) -> ForTypes.SubObject<S, KI, KO, VI, VO>
-): ForTypes.Disassembly<S, KI, KO, VI, KO>
+): ForTypes.Disassembly<S, KI, KO, VI, VO>
 	local createdAt = os.clock()
 	local self = setmetatable(
 		{
@@ -61,7 +61,7 @@ local function Disassembly<S, KI, KO, VI, VO>(
 			_inputTable = inputTable,
 			_constructor = constructor,
 			_subObjects = {}
-		}, 
+		},
 		METATABLE
 	) :: any
 
@@ -89,8 +89,7 @@ function class.populate<S, KI, KO, VI, VO>(
 	use: Types.Use,
 	output: {[KO]: VO}
 ): ()
-	local minArrayIndex = math.huge
-	local maxArrayIndex = -math.huge
+	local arrayIndices: {number} = {}
 	local hasHoles = false
 	for subObject in self._subObjects do
 		local outputKey, outputValue = subObject:useOutputPair(use)
@@ -103,19 +102,18 @@ function class.populate<S, KI, KO, VI, VO>(
 		end
 		output[outputKey] = outputValue
 		if typeof(outputKey) == "number" then
-			minArrayIndex = math.min(minArrayIndex, outputKey)
-			maxArrayIndex = math.max(maxArrayIndex, outputKey)
+			local index = (outputKey :: any) :: number
+			if index % 1 == 0 then
+				table.insert(arrayIndices, index)
+			end
 		end
 	end
-	-- Be careful of NaN here
-	if hasHoles and maxArrayIndex > minArrayIndex then
+	if hasHoles and #arrayIndices > 0 then
 		local output: {[number]: VO} = output :: any
-		local moveToIndex = minArrayIndex
-		for moveFromIndex = minArrayIndex, maxArrayIndex do
+		table.sort(arrayIndices)
+		local moveToIndex = math.min(arrayIndices[1], 1)
+		for _, moveFromIndex in arrayIndices do
 			local outputValue = output[moveFromIndex]
-			if outputValue == nil then
-				continue
-			end
 			-- The ordering is important in case the indices are the same
 			output[moveFromIndex] = nil
 			output[moveToIndex] = outputValue
@@ -170,10 +168,10 @@ function class._evaluate<S, KI, KO, VI, VO>(
 						-- If the values are the same, then no need to update those,
 						-- so prefer this choice to any other.
 						newInputKey, newInputValue = pendingKey, pendingValue
-						break 
+						break
 					end
 				end
-				if not newInputKey then
+				if newInputKey == nil then
 					table.insert(unmatchedPairs, subObject)
 					continue
 				end
@@ -196,7 +194,7 @@ function class._evaluate<S, KI, KO, VI, VO>(
 		local oldInputKey = subObject.inputKey
 		local oldInputValue = subObject.inputValue
 		local newInputKey: KI?, newInputValue: VI? = next(pendingPairs)
-		if newInputKey then
+		if newInputKey ~= nil then
 			newSubObjects[subObject] = true
 			if newInputKey ~= oldInputKey then
 				subObject.inputKey = newInputKey :: KI
