@@ -78,7 +78,5 @@ External.bindToUpdateStep(function(
 	end
 end)
 
--- Do *not* freeze the class table, because it stores the shared value of all
--- external time objects, and is updated every frame because of that.
--- table.freeze(class)
+table.freeze(class)
 return ExternalTime
