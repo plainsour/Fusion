@@ -23,10 +23,10 @@ local function deriveScopeImpl<T>(
 ): any
 	local metatable = getmetatable(existing :: any)
 	if methods ~= nil then
-		metatable = table.clone(metatable)
+		metatable = if metatable ~= nil then table.clone(metatable) else {}
 		metatable.__index = merge(
 			true, {},
-			metatable.__index,
+			metatable.__index or {},
 			merge(
 				false, {},
 				methods,
