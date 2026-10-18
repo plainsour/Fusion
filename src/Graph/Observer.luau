@@ -6,7 +6,7 @@ local task = nil -- Disable usage of Roblox's task scheduler
 --[[
 	A graph object that runs user code when it's updated by the reactive graph.
 
-	http://elttob.uk/Fusion/0.3/api-reference/state/types/observer/
+	https://elttob.uk/Fusion/0.3/api-reference/state/types/observer/
 ]]
 
 local Package = script.Parent.Parent
@@ -23,6 +23,7 @@ local peek = require(Package.State.peek)
 local nicknames = require(Package.Utility.nicknames)
 
 type Self = Types.Observer<any> & {
+	_watching: unknown,
 	_watchingGraph: Types.GraphObject?,
 	_changeListeners: {[unknown]: Types.ObserverCallback<any>}
 }
@@ -47,6 +48,7 @@ local function Observer(
 			dependencySet = {},
 			lastChange = nil,
 			validity = "invalid",
+			_watching = watching,
 			_watchingGraph = castToGraph(watching),
 			_changeListeners = {}
 		},
@@ -81,7 +83,7 @@ function class.onBind(
 	self: Self,
 	callback: Types.ObserverCallback<any>
 ): () -> ()
-	External.doChoreImmediate(callback, peek(self._watchingGraph))
+	External.doChoreImmediate(callback, peek(self._watching))
 	return self:onChange(callback)
 end
 
@@ -98,10 +100,13 @@ end
 
 function class._evaluate(
 	self: Self
-): ()
-	local value = depend(self, self._watchingGraph)
-	for _, callback in self._changeListeners do
-		External.doChoreImmediate(callback, value)
+): boolean
+	local value = depend(self, self._watching)
+	local listeners = self._changeListeners :: {[any]: Types.ObserverCallback<any>}
+	for id, callback in table.clone(listeners) do
+		if listeners[id] == callback then
+			External.doChoreImmediate(callback, value)
+		end
 	end
 	return true
 end
