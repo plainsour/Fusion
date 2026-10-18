@@ -29,6 +29,9 @@ local getTweenRatio = require(Package.Animation.getTweenRatio)
 local getTweenDuration = require(Package.Animation.getTweenDuration)
 -- Utility
 local nicknames = require(Package.Utility.nicknames)
+local isSimilar = require(Package.Utility.isSimilar)
+
+local NOT_REPORTED = table.freeze {}
 
 export type Self<T> = Types.Tween<T> & {
 	_activeDuration: number,
@@ -37,6 +40,7 @@ export type Self<T> = Types.Tween<T> & {
 	_activeTo: T,
 	_activeTweenInfo: TweenInfo,
 	_goal: Types.UsedAs<T>,
+	_reportedTweenInfo: unknown,
 	_stopwatch: Stopwatch.Stopwatch?,
 	_tweenInfo: Types.UsedAs<TweenInfo>,
 }
@@ -69,13 +73,14 @@ local function Tween<T>(
 			lastChange = nil,
 			scope = scope,
 			validity = "invalid",
-			_activeDuration = nil,
-			_activeElapsed = nil,
+			_activeDuration = 0,
+			_activeElapsed = 0,
 			_activeFrom = nil,
 			_activeTo = nil,
 			_activeTweenInfo = nil,
 			_EXTREMELY_DANGEROUS_usedAsValue = peek(goal),
 			_goal = goal,
+			_reportedTweenInfo = NOT_REPORTED,
 			_stopwatch = stopwatch,
 			_tweenInfo = tweenInfo or TweenInfo.new()
 		},
@@ -132,7 +137,16 @@ function class._evaluate<T>(
 		return false
 	end
 	local stopwatch = self._stopwatch :: Stopwatch.Stopwatch
-	local tweenInfo = peek(self._tweenInfo) :: TweenInfo
+	local tweenInfo = peek(self._tweenInfo) :: any
+	if typeof(tweenInfo) ~= "TweenInfo" then
+		if not isSimilar(tweenInfo, self._reportedTweenInfo) then
+			External.logErrorNonFatal("mistypedTweenInfo", nil, typeof(tweenInfo))
+		end
+		self._reportedTweenInfo = tweenInfo
+		tweenInfo = self._activeTweenInfo or TweenInfo.new()
+	else
+		self._reportedTweenInfo = NOT_REPORTED
+	end
 	-- Restart animation when the goal changes, or if the tween info changes
 	-- partway through another animation.
 	if
