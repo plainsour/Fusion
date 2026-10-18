@@ -372,6 +372,12 @@ function class._evaluate<T>(
 			self._activeLatestP = table.clone(self._activeTargetP)
 			self._activeStartV = table.create(self._activeNumSprings, 0)
 			self._activeLatestV = table.create(self._activeNumSprings, 0)
+		elseif
+			#self._activeStartP == self._activeNumSprings and
+			#self._activeStartV == self._activeNumSprings
+		then
+			table.move(self._activeLatestP, 1, self._activeNumSprings, 1, self._activeStartP)
+			table.move(self._activeLatestV, 1, self._activeNumSprings, 1, self._activeStartV)
 		else
 			self._activeStartP = table.clone(self._activeLatestP)
 			self._activeStartV = table.clone(self._activeLatestV)
