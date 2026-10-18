@@ -50,7 +50,6 @@ local function Stopwatch(
 	local createdAt = os.clock()
 	local self: Self = setmetatable(
 		{
-			awake = true,
 			createdAt = createdAt,
 			dependencySet = {},
 			dependentSet = {},
