@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Fusion = ReplicatedStorage.Fusion
 
 local External = require(Fusion.External)
+local Types = require(Fusion.Types)
 
 local SpecExternal = {}
 
@@ -11,30 +12,46 @@ SpecExternal.policies = {
 	allowWebLinks = true
 }
 
-local queue = {} :: {thread}
+type QueuedChore = {
+	thread: thread,
+	args: {n: number, [number]: any}
+}
+
+local queue = {} :: {QueuedChore}
+
+local function queueEntry(
+	thread: thread,
+	...: any
+): QueuedChore
+	return {thread = thread, args = table.pack(...)}
+end
 
 --[[
-   Sends an immediate task to the external scheduler. Throws if none is set.
+	Runs a chore immediately: the chore is resumed next, and the calling thread
+	continues straight after it. Must be called from a thread being run by
+	`SpecExternal.step`.
 ]]
-function SpecExternal.doTaskImmediate(
-	resume: () -> ()
+function SpecExternal.doChoreImmediate(
+	resume: (...any) -> (),
+	...: any
 )
-	table.insert(queue, 1, coroutine.running())
-	table.insert(queue, 1, coroutine.create(resume))
+	table.insert(queue, 1, queueEntry(coroutine.running()))
+	table.insert(queue, 1, queueEntry(coroutine.create(resume), ...))
 	coroutine.yield()
 end
 
 --[[
-	Sends a deferred task to the external scheduler. Throws if none is set.
+	Queues a chore to run after everything currently queued.
 ]]
-function SpecExternal.doTaskDeferred(
-	resume: () -> ()
+function SpecExternal.doChoreDeferred(
+	resume: (...any) -> (),
+	...: any
 )
-	table.insert(queue, coroutine.create(resume))
+	table.insert(queue, queueEntry(coroutine.create(resume), ...))
 end
 
 function SpecExternal.deferSelfForTesting()
-	table.insert(queue, coroutine.running())
+	table.insert(queue, queueEntry(coroutine.running()))
 	coroutine.yield()
 end
 
@@ -59,21 +76,22 @@ end
 local doUpdateSteps = false
 
 --[[
-	Binds Fusion's update step to RunService step events.
+	Enables update steps from `SpecExternal.step`.
 ]]
 function SpecExternal.startScheduler()
 	doUpdateSteps = true
 end
 
 --[[
-	Unbinds Fusion's update step from RunService step events.
+	Disables update steps from `SpecExternal.step`.
 ]]
 function SpecExternal.stopScheduler()
 	doUpdateSteps = false
 end
 
 --[[
-	Unbinds Fusion's update step from RunService step events.
+	Performs an update step at the given time (if the scheduler is running),
+	then runs queued chores until the queue is empty.
 ]]
 function SpecExternal.step(
 	currentTime: number
@@ -83,15 +101,18 @@ function SpecExternal.step(
 	end
 
 	while true do
-		local nextTask = table.remove(queue, 1)
-		if nextTask == nil then
+		local nextChore = table.remove(queue, 1)
+		if nextChore == nil then
 			break
 		end
-		local ok, result: string = coroutine.resume(nextTask)
+		local args = nextChore.args
+		local ok, result = coroutine.resume(nextChore.thread, table.unpack(args, 1, args.n))
 		if not ok then
-			warn("Error in spec scheduler: " .. result)
+			warn("Error in spec scheduler: " .. tostring(result))
 		end
 	end
 end
+
+local _typecheck: Types.ExternalProvider = SpecExternal
 
 return SpecExternal

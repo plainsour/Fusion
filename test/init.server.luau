@@ -16,7 +16,7 @@ if TestVars.runTests then
 	External.setExternalProvider(SpecExternal)
 
 	local data
-	SpecExternal.doTaskDeferred(function()
+	SpecExternal.doChoreDeferred(function()
 		data = (TestEZ.TestBootstrap :: any):run({script.Spec})
 	end)
 	SpecExternal.step(0)

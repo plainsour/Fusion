@@ -24,7 +24,7 @@ return function()
 		expect(computed).to.be.a("table")
 		expect(computed.type).to.equal("State")
 		expect(computed.kind).to.equal("Computed")
-		expect(table.find(scope, computed.oldestTask :: any)).never.to.equal(nil)
+		expect(table.find(scope, computed.oldestChore :: any)).never.to.equal(nil)
 
 		doCleanup(scope)
 	end)
