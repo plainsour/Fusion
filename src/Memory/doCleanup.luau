@@ -36,9 +36,11 @@ local function cleanupChore(
 		chore:Disconnect()
 
 	-- case 3: thread
-	-- TODO: This was added as a bandaid patch for cleaning up threads in Roblox.
-	-- This will not work in other environments and should ideally be updated to handle
-	-- coroutines and Roblox threads separately.
+	elseif choreType == "thread" and typeof(task) ~= "table" then
+		if coroutine.running() ~= chore then
+			pcall(coroutine.close, chore)
+		end
+
 	elseif choreType == "thread" then
 		local cancelled
 		if coroutine.running() ~= chore then
