@@ -121,7 +121,7 @@ local function unwrapRotation(
 	end
 	local along = axisX * (referenceX - x) + axisY * (referenceY - y) + axisZ * (referenceZ - z)
 	local turns = math.round(along / TAU)
-	if turns ~= 0 then
+	if turns ~= 0 and math.abs(turns) < math.huge then
 		numbers[4] = x + axisX * TAU * turns
 		numbers[5] = y + axisY * TAU * turns
 		numbers[6] = z + axisZ * TAU * turns
@@ -134,7 +134,7 @@ local function rewrapRotation(
 ): ()
 	local x, y, z = positions[4], positions[5], positions[6]
 	local angle = math.sqrt(x * x + y * y + z * z)
-	if angle <= math.pi then
+	if not (angle > math.pi and angle < math.huge) then
 		return
 	end
 	local scale = (angle - TAU * math.round(angle / TAU)) / angle
@@ -282,6 +282,7 @@ function class.setPosition<T>(
 	end
 	self._activeStartP = unpackType(newValue, newType)
 	if newType == "CFrame" then
+		rewrapRotation(self._activeLatestP, self._activeLatestV)
 		unwrapRotation(self._activeTargetP, self._activeStartP)
 	end
 	self._activeStartV = table.clone(self._activeLatestV)
@@ -299,7 +300,6 @@ function class.setVelocity<T>(
 		return
 	end
 	evaluate(self, false) -- ensure the _active params are up to date
-	boundRotation(self)
 	if newValue then
 		local newType = typeof(newValue)
 		if newType ~= self._activeType then
@@ -309,6 +309,7 @@ function class.setVelocity<T>(
 	else
 		self._activeStartV = table.create(self._activeNumSprings, 0)
 	end
+	boundRotation(self)
 	self._activeStartP = table.clone(self._activeLatestP)
 	local stopwatch = self._stopwatch :: Stopwatch.Stopwatch
 	stopwatch:zero()
