@@ -14,7 +14,7 @@
 
 ```Lua
 function Fusion.doCleanup(
-	task: Fusion.Task
+	chore: Fusion.Chore
 ): ()
 ```
 
@@ -30,9 +30,9 @@ Attempts to destroy all arguments based on their runtime type.
 ## Parameters
 
 <h3 markdown>
-	task
+	chore
 	<span class="fusiondoc-api-type">
-		: <a href="../../../memory/types/task">Task</a>
+		: <a href="../../../memory/types/chore">Chore</a>
 	</span>
 </h3>
 
@@ -50,6 +50,9 @@ When Fusion is running inside of Roblox:
 
 - if `Instance`, `:Destroy()` is called
 - ...else if `RBXScriptConnection`, `:Disconnect()` is called
+- ...else if `thread`, it is cancelled with `task.cancel`
+
+Outside of Roblox, a `thread` is closed with `coroutine.close` instead.
 
 If none of these conditions match, the value is ignored.
 

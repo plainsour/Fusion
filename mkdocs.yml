@@ -114,7 +114,7 @@ nav:
       - Types:
         - Scope: api-reference/memory/types/scope.md
         - ScopedObject: api-reference/memory/types/scopedobject.md
-        - Task: api-reference/memory/types/task.md
+        - Chore: api-reference/memory/types/chore.md
       - Members:
         - deriveScope: api-reference/memory/members/derivescope.md
         - doCleanup: api-reference/memory/members/docleanup.md

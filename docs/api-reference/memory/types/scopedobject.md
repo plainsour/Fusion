@@ -42,10 +42,10 @@ been destroyed.
 	The `scope` is expected to be set once upon construction. It should not be
 	assigned to again, except when the scope is destroyed - at which point it
 	should be set to `nil` to indicate that it no longer exists inside of a
-	scope. This is typically done inside of `oldestTask`.
+	scope. This is typically done inside of `oldestChore`.
 
 <h3 markdown>
-	oldestTask
+	oldestChore
 	<span class="fusiondoc-api-type">
 		: unknown
 	</span>
@@ -55,10 +55,10 @@ The value inside of `scope` representing the point at which the scoped object
 will be destroyed.
 
 !!! note "Unchanged until destruction"
-	The `oldestTask` is expected to be set once upon construction. It should not
+	The `oldestChore` is expected to be set once upon construction. It should not
 	be assigned to again.
 
-	`oldestTask` is typically a callback that cleans up the object, but it's
+	`oldestChore` is typically a callback that cleans up the object, but it's
 	typed ambiguously here as it is only used as a reference for lifetime
 	analysis, representing the point beyond which the object can be considered
 	completely destroyed. It shouldn't be used for much else.

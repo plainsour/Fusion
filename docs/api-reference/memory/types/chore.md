@@ -1,24 +1,25 @@
 <nav class="fusiondoc-api-breadcrumbs">
 	<span>Memory</span>
 	<span>Types</span>
-	<span>Task</span>
+	<span>Chore</span>
 </nav>
 
 <h1 class="fusiondoc-api-header" markdown>
 	<span class="fusiondoc-api-icon" markdown>:octicons-note-24:</span>
-	<span class="fusiondoc-api-name">Task</span>
+	<span class="fusiondoc-api-name">Chore</span>
 </h1>
 
 ```Lua
-export type Task = 
-	Instance 
+export type Chore =
+	Instance
 	| RBXScriptConnection
-	| () -> () 
-	| {destroy: (self) -> ()} 
-	| {Destroy: (self) -> ()} 
-	| {disconnect: (self) -> ()} 
-	| {Disconnect: (self) -> ()} 
-	| {Task}
+	| thread
+	| () -> ()
+	| {destroy: (self) -> ()}
+	| {Destroy: (self) -> ()}
+	| {disconnect: (self) -> ()}
+	| {Disconnect: (self) -> ()}
+	| {Chore}
 ```
 Types which [`doCleanup`](../../members/docleanup) has defined behaviour for.
 

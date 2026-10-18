@@ -19,7 +19,7 @@ function Fusion.insert<Tasks...>(
 ): Tasks...
 ```
 
-Inserts destruction [tasks](../../types/task) passed in to the
+Inserts destruction [chores](../../types/chore) passed in to the
 [scope](../../types/scope). Returns the clean up tasks to be used for variable
 declarations.
 
@@ -54,7 +54,7 @@ destruction tasks.
 	</span>
 </h3>
 
-The destruction [tasks](../../types/task) which should be inserted into the
+The destruction [chores](../../types/chore) which should be inserted into the
 scope.
 
 -----
@@ -66,7 +66,7 @@ scope.
 	</span>
 </h2>
 
-The destruction [tasks](../../types/task) that has been inserted into the scope.
+The destruction [chores](../../types/chore) that has been inserted into the scope.
 
 -----
 

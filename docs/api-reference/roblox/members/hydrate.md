@@ -14,6 +14,7 @@
 
 ```Lua
 function Fusion.Hydrate(
+	scope: Scope<unknown>,
 	target: Instance
 ): (
 	props: PropertyTable
@@ -43,6 +44,20 @@ the `descendants` stage.
 -----
 
 ## Parameters
+
+<h3 markdown>
+	scope
+	<span class="fusiondoc-api-type">
+		: <a href="../../../memory/types/scope">Scope</a>&lt;unknown&gt;
+	</span>
+</h3>
+
+The [scope](../../../memory/types/scope) which should be used to store
+destruction chores for the instance and its bindings.
+
+!!! note "The target is cleaned up too"
+	The target instance is added to the scope, so it will be destroyed when the
+	scope is cleaned up.
 
 <h3 markdown>
 	target

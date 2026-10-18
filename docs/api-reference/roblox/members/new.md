@@ -14,6 +14,7 @@
 
 ```Lua
 function Fusion.New(
+	scope: Scope<unknown>,
 	className: string
 ): (
 	props: PropertyTable
@@ -37,6 +38,16 @@ the `descendants` stage.
 -----
 
 ## Parameters
+
+<h3 markdown>
+	scope
+	<span class="fusiondoc-api-type">
+		: <a href="../../../memory/types/scope">Scope</a>&lt;unknown&gt;
+	</span>
+</h3>
+
+The [scope](../../../memory/types/scope) which should be used to store
+destruction chores for the instance and its bindings.
 
 <h3 markdown>
 	className

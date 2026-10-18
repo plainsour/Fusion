@@ -27,6 +27,25 @@ the details for you.
 
 <div class="fusiondoc-error-api-section" markdown>
 
+## attributeSetError
+
+```
+Error setting attribute: Attribute "Bad" has an unsupported type
+```
+
+**Thrown by:**
+[`Attribute`](../../roblox/members/attribute)
+
+You attempted to set an attribute, but Roblox threw an error in response.
+
+The error includes a more specific message which can be used to diagnose the
+issue.
+</div>
+
+-----
+
+<div class="fusiondoc-error-api-section" markdown>
+
 ## callbackError
 
 ```
@@ -192,6 +211,31 @@ The key '6' was returned multiple times simultaneously, which is not allowed in
 
 When called with different items from the table, the same key was returned for
 both of them. This is not allowed, because keys have to be unique in a table.
+</div>
+
+-----
+
+<div class="fusiondoc-error-api-section" markdown>
+
+## infiniteLoop
+
+```
+Detected an infinite loop. Consider adding an explicit breakpoint to your code
+to prevent a cyclic dependency.
+```
+
+**Thrown by:**
+[`Computed`](../../state/members/computed),
+[`Observer`](../../graph/members/observer),
+[`ForKeys`](../../state/members/forkeys),
+[`ForValues`](../../state/members/forvalues),
+[`ForPairs`](../../state/members/forpairs)
+
+A reactive object tried to use itself while it was still being calculated, or
+an update took so long that Fusion assumed it would never finish.
+
+This usually means two objects depend on each other in a cycle, for example a
+`Computed` that sets a `Value` which the same `Computed` uses.
 </div>
 
 -----
@@ -485,6 +529,27 @@ You attempted to set a property, but Roblox threw an error in response.
 
 The error includes a more specific message which can be used to diagnose the
 issue.
+</div>
+
+-----
+
+<div class="fusiondoc-error-api-section" markdown>
+
+## springConstantGoal
+
+```
+This spring follows a constant goal, so its position and velocity can't be
+changed.
+```
+
+**Thrown by:**
+[`Spring`](../../animation/members/spring)
+
+You called `setPosition`, `setVelocity` or `addVelocity` on a spring whose goal
+is a constant value rather than a state object.
+
+A spring with a constant goal never moves, so there's no motion to change. Pass
+a state object as the goal if you need to control the spring's motion.
 </div>
 
 -----
