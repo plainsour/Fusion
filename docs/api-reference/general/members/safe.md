@@ -61,6 +61,10 @@ The possibly erroneous calculation or expression.
 A fallback calculation that should provide a backup answer if the possibly
 erroneous calculation throws an error.
 
+If `fallback` itself throws an error, `Safe` throws that error instead of
+returning a value. `fallback` runs inside a protected call, so stack traces
+taken inside it include two extra frames from `Safe`.
+
 -----
 
 <h2 markdown>

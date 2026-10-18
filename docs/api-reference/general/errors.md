@@ -234,8 +234,11 @@ to prevent a cyclic dependency.
 A reactive object tried to use itself while it was still being calculated, or
 an update took so long that Fusion assumed it would never finish.
 
-This usually means two objects depend on each other in a cycle, for example a
-`Computed` that sets a `Value` which the same `Computed` uses.
+This usually means two objects depend on each other in a cycle, for example two
+`Computed` objects that each `use` the other.
+
+When this happens inside a `Computed` or `For` callback, the error is usually
+reported wrapped inside a [`callbackError`](#callbackerror).
 </div>
 
 -----
