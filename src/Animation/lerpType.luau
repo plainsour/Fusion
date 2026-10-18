@@ -106,14 +106,14 @@ local function lerpType(
 			local to, from = to :: Region3int16, from :: Region3int16
 			return Region3int16.new(
 				Vector3int16.new(
-					(to.Min.X - from.Min.X) * ratio + from.Min.X,
-					(to.Min.Y - from.Min.Y) * ratio + from.Min.Y,
-					(to.Min.Z - from.Min.Z) * ratio + from.Min.Z
+					math.round((to.Min.X - from.Min.X) * ratio + from.Min.X),
+					math.round((to.Min.Y - from.Min.Y) * ratio + from.Min.Y),
+					math.round((to.Min.Z - from.Min.Z) * ratio + from.Min.Z)
 				),
 				Vector3int16.new(
-					(to.Max.X - from.Max.X) * ratio + from.Max.X,
-					(to.Max.Y - from.Max.Y) * ratio + from.Max.Y,
-					(to.Max.Z - from.Max.Z) * ratio + from.Max.Z
+					math.round((to.Max.X - from.Max.X) * ratio + from.Max.X),
+					math.round((to.Max.Y - from.Max.Y) * ratio + from.Max.Y),
+					math.round((to.Max.Z - from.Max.Z) * ratio + from.Max.Z)
 				)
 			)
 
@@ -121,12 +121,17 @@ local function lerpType(
 			local to, from = to :: UDim, from :: UDim
 			return UDim.new(
 				(to.Scale - from.Scale) * ratio + from.Scale,
-				(to.Offset - from.Offset) * ratio + from.Offset
+				math.round((to.Offset - from.Offset) * ratio + from.Offset)
 			)
 
 		elseif typeString == "UDim2" then
 			local to, from = to :: UDim2, from :: UDim2
-			return from:Lerp(to, ratio)
+			return UDim2.new(
+				(to.X.Scale - from.X.Scale) * ratio + from.X.Scale,
+				math.round((to.X.Offset - from.X.Offset) * ratio + from.X.Offset),
+				(to.Y.Scale - from.Y.Scale) * ratio + from.Y.Scale,
+				math.round((to.Y.Offset - from.Y.Offset) * ratio + from.Y.Offset)
+			)
 
 		elseif typeString == "Vector2" then
 			local to, from = to :: Vector2, from :: Vector2
@@ -135,8 +140,8 @@ local function lerpType(
 		elseif typeString == "Vector2int16" then
 			local to, from = to :: Vector2int16, from :: Vector2int16
 			return Vector2int16.new(
-				(to.X - from.X) * ratio + from.X,
-				(to.Y - from.Y) * ratio + from.Y
+				math.round((to.X - from.X) * ratio + from.X),
+				math.round((to.Y - from.Y) * ratio + from.Y)
 			)
 
 		elseif typeString == "Vector3" then
@@ -146,9 +151,9 @@ local function lerpType(
 		elseif typeString == "Vector3int16" then
 			local to, from = to :: Vector3int16, from :: Vector3int16
 			return Vector3int16.new(
-				(to.X - from.X) * ratio + from.X,
-				(to.Y - from.Y) * ratio + from.Y,
-				(to.Z - from.Z) * ratio + from.Z
+				math.round((to.X - from.X) * ratio + from.X),
+				math.round((to.Y - from.Y) * ratio + from.Y),
+				math.round((to.Z - from.Z) * ratio + from.Z)
 			)
 		end
 	end
