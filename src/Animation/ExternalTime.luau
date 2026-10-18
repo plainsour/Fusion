@@ -30,20 +30,15 @@ local METATABLE = table.freeze {__index = class}
 
 local allTimers: {Self} = {}
 local deadTimers = 0
-local updateDepth = 0
 
 local function compactTimers(): ()
-	local write = 0
-	for read = 1, #allTimers do
-		local timer = allTimers[read]
+	local liveTimers: {Self} = table.create(math.max(#allTimers - deadTimers, 0))
+	for _, timer in allTimers do
 		if timer.scope ~= nil then
-			write += 1
-			allTimers[write] = timer
+			table.insert(liveTimers, timer)
 		end
 	end
-	for index = #allTimers, write + 1, -1 do
-		allTimers[index] = nil
-	end
+	allTimers = liveTimers
 	deadTimers = 0
 end
 
@@ -68,7 +63,7 @@ local function ExternalTime(
 		end
 		self.scope = nil
 		deadTimers += 1
-		if updateDepth == 0 and deadTimers * 2 > #allTimers then
+		if deadTimers * 2 > #allTimers then
 			compactTimers()
 		end
 	end
@@ -92,9 +87,10 @@ function class._evaluate(
 end
 
 local function changeAllTimers(): ()
+	local timers = allTimers
 	local index = 1
-	while index <= #allTimers do
-		local timer = allTimers[index]
+	while index <= #timers do
+		local timer = timers[index]
 		if timer.scope == nil then
 			index += 1
 			continue
@@ -112,14 +108,9 @@ end
 External.bindToUpdateStep(function(
 	externalNow: number
 ): ()
-	updateDepth += 1
-	local ok, err = pcall(changeAllTimers)
-	updateDepth -= 1
-	if updateDepth == 0 and deadTimers > 0 then
+	changeAllTimers()
+	if deadTimers > 0 then
 		compactTimers()
-	end
-	if not ok then
-		error(err, 0)
 	end
 end)
 
