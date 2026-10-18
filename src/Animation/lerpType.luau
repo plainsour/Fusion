@@ -17,12 +17,13 @@ local labCache: {[Color3]: Vector3} = setmetatable({}, {__mode = "k"}) :: any
 local function labOf(
 	colour: Color3
 ): Vector3
-	local lab = labCache[colour]
-	if lab == nil then
-		lab = Oklab.fromSRGB(colour)
-		labCache[colour] = lab
+	local lab: Vector3? = labCache[colour]
+	if lab ~= nil then
+		return lab
 	end
-	return lab :: Vector3
+	local newLab = Oklab.fromSRGB(colour)
+	labCache[colour] = newLab
+	return newLab
 end
 
 local function lerpType(
@@ -53,8 +54,8 @@ local function lerpType(
 
 		elseif typeString == "ColorSequenceKeypoint" then
 			local to, from = to :: ColorSequenceKeypoint, from :: ColorSequenceKeypoint
-			local fromLab = labOf(from.Value)
-			local toLab = labOf(to.Value)
+			local fromLab = Oklab.fromSRGB(from.Value)
+			local toLab = Oklab.fromSRGB(to.Value)
 			return ColorSequenceKeypoint.new(
 				(to.Time - from.Time) * ratio + from.Time,
 				Oklab.toSRGB(
