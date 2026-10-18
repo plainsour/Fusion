@@ -16,7 +16,7 @@ local function Safe<Success, Fail>(
 ): Success | Fail
 	local fallbackFailed = false
 	local fallbackError: unknown = nil
-	local _, value = xpcall(callbacks.try, function(err)
+	local _, value = xpcall(callbacks.try, function(err: unknown): any
 		local ok, result = pcall(callbacks.fallback, err)
 		if not ok then
 			fallbackFailed = true

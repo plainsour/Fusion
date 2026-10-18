@@ -21,10 +21,10 @@ local function deriveScope(
 	...: any
 ): any
 	local scope = if methods == nil
-		then setmetatable({}, getmetatable(existing))
+		then setmetatable({}, getmetatable(existing)) :: any
 		else deriveScopeImpl(existing, methods, ...)
 	ExternalDebug.trackScope(scope)
 	return scope
 end
 
-return deriveScope :: Types.DeriveScopeConstructor
+return (deriveScope :: any) :: Types.DeriveScopeConstructor

@@ -21,9 +21,10 @@ local function innerScope<T>(
 	table.insert(
 		new,
 		function()
-			for index = #existing, 1, -1 do
-				if existing[index] == new then
-					table.remove(existing, index)
+			local chores = existing :: {Types.Chore}
+			for index = #chores, 1, -1 do
+				if chores[index] == new then
+					table.remove(chores, index)
 					break
 				end
 			end
