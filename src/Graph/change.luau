@@ -20,6 +20,13 @@ local evaluate = require(Package.Graph.evaluate)
 -- cycle and error out?
 local TERMINATION_TIME = 1
 
+local function byCreation(
+	a: Types.GraphObject,
+	b: Types.GraphObject
+): boolean
+	return a.createdAt < b.createdAt
+end
+
 local function change(
 	target: Types.GraphObject
 ): ()
@@ -28,7 +35,7 @@ local function change(
 	end
 
 	local meaningfullyChanged = evaluate(target, true)
-	if not meaningfullyChanged then
+	if not meaningfullyChanged or next(target.dependentSet) == nil then
 		return
 	end
 
@@ -69,9 +76,9 @@ local function change(
 	-- may experience 'glitches' where nested graph objects see intermediate
 	-- values before being destroyed.
 	-- https://fluff.blog/2024/07/14/glitches-in-dynamic-reactive-graphs.html
-	table.sort(eagerList, function(a, b)
-		return a.createdAt < b.createdAt
-	end)
+	if #eagerList > 1 then
+		table.sort(eagerList, byCreation)
+	end
 
 	for _, eagerTarget in eagerList do
 		evaluate(eagerTarget, false)
