@@ -10,6 +10,9 @@ local task = nil -- Disable usage of Roblox's task scheduler
 
 local Package = script.Parent.Parent
 local Types = require(Package.Types)
+local External = require(Package.External)
+-- Logging
+local parseError = require(Package.Logging.parseError)
 -- Memory
 local checkLifetime = require(Package.Memory.checkLifetime)
 -- Graph
@@ -19,6 +22,17 @@ local castToState = require(Package.State.castToState)
 local peek = require(Package.State.peek)
 
 local keyCache: {[string]: Types.SpecialKey} = {}
+
+local function setAttribute(
+	instance: Instance,
+	attributeName: string,
+	value: unknown
+): ()
+	local ok, err = xpcall(instance.SetAttribute, parseError, instance, attributeName, value)
+	if not ok then
+		External.logErrorNonFatal("attributeSetError", err)
+	end
+end
 
 local function Attribute(
 	attributeName: string
@@ -43,10 +57,10 @@ local function Attribute(
 						checkLifetime.formatters.boundAttribute, attributeName
 					)
 					Observer(scope, value :: any):onBind(function()
-						applyTo:SetAttribute(attributeName, peek(value))
+						setAttribute(applyTo, attributeName, peek(value))
 					end)
 				else
-					applyTo:SetAttribute(attributeName, value)
+					setAttribute(applyTo, attributeName, value)
 				end
 			end
 		}

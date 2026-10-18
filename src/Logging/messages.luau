@@ -8,6 +8,7 @@ local task = nil -- Disable usage of Roblox's task scheduler
 ]]
 
 return {
+	attributeSetError = "Error setting attribute:\nERROR_MESSAGE",
 	callbackError = "Error in callback:\nERROR_MESSAGE",
 	cannotAssignProperty = "The class type '%s' has no assignable property '%s'.",
 	cannotConnectChange = "The %s class doesn't have a property called '%s'.",

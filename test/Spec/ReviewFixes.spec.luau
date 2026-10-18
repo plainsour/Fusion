@@ -356,4 +356,38 @@ return function()
 		end
 		expect(lastAngle).to.be.near(-1, 1e-5)
 	end)
+
+	it("detach only detaches what it's given", function()
+		local expect = getfenv().expect
+		local scope = scoped({Value = Value})
+		local frame = Instance.new("Frame")
+		table.insert(scope, frame)
+		local value = scope:Value(frame)
+		detach(scope, value)
+		expect(table.find(scope, frame)).never.to.equal(nil)
+		expect(table.find(scope, value.oldestChore)).to.equal(nil)
+		local a = function() end
+		local b = function() end
+		table.insert(scope, a)
+		table.insert(scope, b)
+		detach(scope, {a, b})
+		expect(table.find(scope, a)).to.equal(nil)
+		expect(table.find(scope, b)).to.equal(nil)
+		local other = scope:Value(1)
+		detach(scope, {other})
+		expect(table.find(scope, other.oldestChore)).to.equal(nil)
+		doCleanup(scope)
+		frame:Destroy()
+	end)
+
+	it("attribute errors are logged instead of thrown", function()
+		local expect = getfenv().expect
+		local Attribute = require(Fusion.Instances.Attribute)
+		local captured = withCapturedErrors(function()
+			local frame = Instance.new("Frame")
+			Attribute("Bad").apply(Attribute("Bad"), {}, {}, frame)
+			frame:Destroy()
+		end)
+		expect(#captured).to.equal(1)
+	end)
 end
