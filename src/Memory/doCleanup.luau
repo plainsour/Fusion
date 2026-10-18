@@ -26,22 +26,21 @@ local doCleanup: (Types.Chore) -> ()
 local function cleanupChore(
 	chore: Types.Chore
 ): ()
-	local choreType = typeof(chore)
 	-- case 1: Instance
-	if choreType == "Instance" then
+	if typeof(chore) == "Instance" then
 		chore:Destroy()
 
 	-- case 2: RBXScriptConnection
-	elseif choreType == "RBXScriptConnection" then
+	elseif typeof(chore) == "RBXScriptConnection" then
 		chore:Disconnect()
 
 	-- case 3: thread
-	elseif choreType == "thread" and typeof(task) ~= "table" then
+	elseif typeof(chore) == "thread" and typeof(task) ~= "table" then
 		if coroutine.running() ~= chore then
 			pcall(coroutine.close, chore)
 		end
 
-	elseif choreType == "thread" then
+	elseif typeof(chore) == "thread" then
 		local cancelled
 		if coroutine.running() ~= chore then
 			cancelled = pcall(function()
@@ -57,10 +56,10 @@ local function cleanupChore(
 		end
 
 	-- case 4: callback
-	elseif choreType == "function" then
+	elseif typeof(chore) == "function" then
 		chore()
 
-	elseif choreType == "table" then
+	elseif typeof(chore) == "table" then
 		local chore = (chore :: any) :: {
 			destroy: (...unknown) -> (...unknown)?,
 			Destroy: (...unknown) -> (...unknown)?,
@@ -101,7 +100,7 @@ local function cleanupChore(
 				chore[index] = nil
 				if item ~= nil then
 					local ok, err
-					if type(item) == "table" or alreadyDestroying[item] then
+					if type(item) == "table" or item ~= item or alreadyDestroying[item] then
 						ok, err = pcall(doCleanup, item)
 					else
 						alreadyDestroying[item] = true
@@ -112,7 +111,7 @@ local function cleanupChore(
 						firstError = err
 					end
 				end
-				index = math.min(index - 1, #chore)
+				index -= 1
 			end
 
 			ExternalDebug.untrackScope(chore)
