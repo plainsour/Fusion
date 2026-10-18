@@ -21,9 +21,11 @@ local function innerScope<T>(
 	table.insert(
 		new,
 		function()
-			local index = table.find(existing, new)
-			if index ~= nil then
-				table.remove(existing, index)
+			for index = #existing, 1, -1 do
+				if existing[index] == new then
+					table.remove(existing, index)
+					break
+				end
 			end
 		end
 	)
