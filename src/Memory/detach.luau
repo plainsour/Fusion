@@ -29,9 +29,10 @@ local function removeObjectFromScope(
 		return true
 	end
 	if type(chore) == "table" then
-		local oldestChore = (chore :: any).oldestChore
+		local oldestChore = rawget(chore :: any, "oldestChore")
 		if oldestChore ~= nil then
-			return removeFromScope(scope, oldestChore)
+			removeFromScope(scope, oldestChore)
+			return true
 		end
 	end
 	return false
@@ -44,7 +45,7 @@ local function detach<Chores...>(
 	for i = 1, select("#", ...) do
 		local chore = select(i, ...)
 		if not removeObjectFromScope(scope, chore) and type(chore) == "table" then
-			for _, item in ipairs(chore :: {unknown}) do
+			for _, item in chore :: {[unknown]: unknown} do
 				removeObjectFromScope(scope, item)
 			end
 		end
