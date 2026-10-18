@@ -20,7 +20,8 @@ local nicknames = require(Package.Utility.nicknames)
 local Disassembly = require(Package.State.For.Disassembly)
 
 type Self<S, KI, KO, VI, VO> = Types.For<KO, VO> & {
-	_disassembly: ForTypes.Disassembly<S, KI, KO, VI, VO>
+	_disassembly: ForTypes.Disassembly<S, KI, KO, VI, VO>,
+	_canPatch: boolean
 }
 
 local class = {}
@@ -48,6 +49,7 @@ local function For<S, KI, KO, VI, VO>(
 			scope = scope,
 			validity = "invalid",
 			_EXTREMELY_DANGEROUS_usedAsValue = {},
+			_canPatch = false,
 			_disassembly = Disassembly(
 				scope,
 				inputTable,
@@ -77,16 +79,26 @@ function class._evaluate<S, KI, KO, VI, VO>(
 		return false
 	end
 
-	depend(self, self._disassembly)
-	table.clear(self._EXTREMELY_DANGEROUS_usedAsValue)
-	self._disassembly:populate(
-		function<T>(
-			maybeState: Types.UsedAs<T>
-		): T
-			return depend(self, maybeState)
-		end,
-		self._EXTREMELY_DANGEROUS_usedAsValue
-	)
+	local disassembly = self._disassembly
+	local since = self.lastChange
+	local output = self._EXTREMELY_DANGEROUS_usedAsValue
+	local function use<T>(
+		maybeState: Types.UsedAs<T>
+	): T
+		return depend(self, maybeState)
+	end
+	depend(self, disassembly)
+	if
+		since ~= nil and
+		self._canPatch and
+		not disassembly._membershipChanged and
+		disassembly:patch(self, use, since, output)
+	then
+		return true
+	end
+	table.clear(output)
+	self._canPatch = disassembly:populate(use, output)
+	disassembly._membershipChanged = false
 
 	return true
 end

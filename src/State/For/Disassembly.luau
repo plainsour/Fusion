@@ -13,6 +13,8 @@ local External = require(Package.External)
 -- Graph
 local timestamp = require(Package.Graph.timestamp)
 local depend = require(Package.Graph.depend)
+local evaluate = require(Package.Graph.evaluate)
+local castToGraph = require(Package.Graph.castToGraph)
 -- State
 local castToState = require(Package.State.castToState)
 local ForTypes = require(Package.State.For.ForTypes)
@@ -61,6 +63,7 @@ local function Disassembly<S, KI, KO, VI, VO>(
 			validity = "invalid",
 			_inputTable = inputTable,
 			_constructor = constructor,
+			_membershipChanged = true,
 			_subObjects = {}
 		},
 		METATABLE
@@ -128,20 +131,90 @@ local function buildValueIndex<K, V>(
 	return valueIndex, slowKeys
 end
 
+local function useOutputPairRecorded<S, KI, KO, VI, VO>(
+	subObject: ForTypes.SubObject<S, KI, KO, VI, VO>,
+	use: Types.Use
+): (KO?, VO?)
+	local usedObjects = subObject._usedObjects
+	if usedObjects == nil then
+		usedObjects = {}
+		subObject._usedObjects = usedObjects
+	else
+		table.clear(usedObjects)
+	end
+	local usedObjects = usedObjects :: {Types.GraphObject}
+	local outputKey, outputValue = subObject:useOutputPair(function<T>(
+		maybeState: Types.UsedAs<T>
+	): T
+		local object = castToGraph(maybeState)
+		if object ~= nil then
+			table.insert(usedObjects, object)
+		end
+		return use(maybeState)
+	end)
+	subObject._outputKey = outputKey
+	subObject._dirty = false
+	return outputKey, outputValue
+end
+
+function class.patch<S, KI, KO, VI, VO>(
+	self: Self<S, KI, KO, VI, VO>,
+	dependent: Types.GraphObject,
+	use: Types.Use,
+	since: number,
+	output: {[KO]: VO}
+): boolean
+	local dependencySet = dependent.dependencySet
+	for subObject in self._subObjects do
+		local usedObjects = subObject._usedObjects
+		if usedObjects == nil then
+			return false
+		end
+		local changed = subObject._dirty == true
+		if not changed then
+			for _, object in usedObjects do
+				if object.validity ~= "valid" then
+					evaluate(object, false)
+				end
+				local lastChange = object.lastChange
+				if lastChange == nil or lastChange > since then
+					changed = true
+					break
+				end
+			end
+		end
+		if changed then
+			local oldOutputKey = subObject._outputKey
+			local outputKey, outputValue = useOutputPairRecorded(subObject, use)
+			if outputKey == nil or outputValue == nil or outputKey ~= oldOutputKey then
+				return false
+			end
+			output[outputKey] = outputValue
+		else
+			for _, object in usedObjects do
+				dependencySet[object] = true
+			end
+		end
+	end
+	return true
+end
+
 function class.populate<S, KI, KO, VI, VO>(
 	self: Self<S, KI, KO, VI, VO>,
 	use: Types.Use,
 	output: {[KO]: VO}
-): ()
+): boolean
 	local arrayIndices: {number} = {}
 	local hasHoles = false
+	local hasCollisions = false
 	for subObject in self._subObjects do
-		local outputKey, outputValue = subObject:useOutputPair(use)
+		local outputKey, outputValue = useOutputPairRecorded(subObject, use)
 		if outputKey == nil or outputValue == nil then
 			hasHoles = true
 			continue
 		elseif output[outputKey] ~= nil then
 			External.logErrorNonFatal("forKeyCollision", nil, tostring(outputKey))
+			hasCollisions = true
 			continue
 		end
 		output[outputKey] = outputValue
@@ -164,6 +237,7 @@ function class.populate<S, KI, KO, VI, VO>(
 			moveToIndex += 1
 		end
 	end
+	return not (hasHoles or hasCollisions)
 end
 
 function class._evaluate<S, KI, KO, VI, VO>(
@@ -255,10 +329,12 @@ function class._evaluate<S, KI, KO, VI, VO>(
 		if newInputKey ~= oldInputKey then
 			subObject.inputKey = newInputKey
 			subObject:invalidateInputKey()
+			subObject._dirty = true
 		end
 		if newInputValue ~= oldInputValue then
 			subObject.inputValue = newInputValue
 			subObject:invalidateInputValue()
+			subObject._dirty = true
 		end
 		pendingPairs[newInputKey] = nil
 	end
@@ -272,13 +348,16 @@ function class._evaluate<S, KI, KO, VI, VO>(
 			if newInputKey ~= oldInputKey then
 				subObject.inputKey = newInputKey :: KI
 				subObject:invalidateInputKey()
+				subObject._dirty = true
 			end
 			if newInputValue ~= oldInputValue then
 				subObject.inputValue = newInputValue :: VI
 				subObject:invalidateInputValue()
+				subObject._dirty = true
 			end
 			pendingPairs[newInputKey] = nil
 		else
+			self._membershipChanged = true
 			if subObject.maybeScope ~= nil then
 				doCleanup(subObject.maybeScope)
 				subObject.maybeScope = nil
@@ -289,6 +368,7 @@ function class._evaluate<S, KI, KO, VI, VO>(
 	for pendingKey, pendingValue in pendingPairs do
 		local subObject = self._constructor(deriveScope(outerScope), pendingKey, pendingValue)
 		newSubObjects[subObject] = true
+		self._membershipChanged = true
 	end
 
 	self._subObjects = newSubObjects
