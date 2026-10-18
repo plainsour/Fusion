@@ -33,6 +33,7 @@ return {
 	noTaskScheduler = "Fusion is not connected to an external task scheduler.",
 	poisonedScope = "Attempted to use a scope after it's been destroyed; %s",
 	propertySetError = "Error setting property:\nERROR_MESSAGE",
+	springConstantGoal = "This spring follows a constant goal, so its position and velocity can't be changed.",
 	springNanGoal = "A spring was given a NaN goal, so some simulation has been skipped. Ensure no springs have NaN goals.",
 	springNanMotion = "A spring encountered NaN during motion, so has snapped to the goal position. Ensure no springs have NaN positions or velocities.",
 	springTypeMismatch = "The type '%s' doesn't match the spring's type '%s'.",

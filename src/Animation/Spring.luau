@@ -30,8 +30,13 @@ local unpackType = require(Package.Animation.unpackType)
 local springCoefficients = require(Package.Animation.springCoefficients)
 -- Utility
 local nicknames = require(Package.Utility.nicknames)
+local isSimilar = require(Package.Utility.isSimilar)
+
+local NOT_REPORTED = table.freeze {}
 
 local EPSILON = 0.00001
+local DEFAULT_SPEED = 10
+local DEFAULT_DAMPING = 1
 
 type Self<T> = Types.Spring<T> & {
 	_activeDamping: number,
@@ -47,8 +52,43 @@ type Self<T> = Types.Spring<T> & {
 	_speed: Types.UsedAs<number>,
 	_damping: Types.UsedAs<number>,
 	_goal: Types.UsedAs<T>,
-	_stopwatch: Stopwatch.Stopwatch
+	_reportedSpeed: unknown,
+	_reportedDamping: unknown,
+	_stopwatch: Stopwatch.Stopwatch?
 }
+
+local function sanitiseParameter(
+	raw: unknown,
+	fallback: number,
+	lastReported: unknown,
+	mistypedID: string,
+	invalidID: string
+): (number, unknown)
+	if typeof(raw) ~= "number" then
+		if not isSimilar(raw, lastReported) then
+			External.logErrorNonFatal(mistypedID, nil, typeof(raw))
+		end
+		return fallback, raw
+	end
+	local raw = raw :: number
+	if raw ~= raw or raw < 0 then
+		if not isSimilar(raw, lastReported) then
+			External.logErrorNonFatal(invalidID, nil, raw)
+		end
+		return fallback, raw
+	end
+	return raw, NOT_REPORTED
+end
+
+local function hasSimulation(
+	self: Self<any>
+): boolean
+	if self._stopwatch == nil then
+		External.logWarn("springConstantGoal")
+		return false
+	end
+	return true
+end
 
 local class = {}
 class.type = "State"
@@ -72,8 +112,8 @@ local function Spring<T>(
 		stopwatch:unpause()
 	end
 
-	local speed = speed or 10
-	local damping = damping or 1
+	local speed = if speed == nil then DEFAULT_SPEED else speed
+	local damping = if damping == nil then DEFAULT_DAMPING else damping
 
 	local self: Self<T> = setmetatable(
 		{
@@ -96,6 +136,8 @@ local function Spring<T>(
 			_damping = damping,
 			_EXTREMELY_DANGEROUS_usedAsValue = peek(goal),
 			_goal = goal,
+			_reportedDamping = NOT_REPORTED,
+			_reportedSpeed = NOT_REPORTED,
 			_speed = speed,
 			_stopwatch = stopwatch
 		},
@@ -146,6 +188,9 @@ function class.addVelocity<T>(
 	self: Self<T>,
 	deltaValue: T
 ): ()
+	if not hasSimulation(self) then
+		return
+	end
 	evaluate(self, false) -- ensure the _active params are up to date
 	local deltaType = typeof(deltaValue)
 	if deltaType ~= self._activeType then
@@ -157,8 +202,9 @@ function class.addVelocity<T>(
 	end
 	self._activeStartP = table.clone(self._activeLatestP)
 	self._activeStartV = newStartV
-	self._stopwatch:zero()
-	self._stopwatch:unpause()
+	local stopwatch = self._stopwatch :: Stopwatch.Stopwatch
+	stopwatch:zero()
+	stopwatch:unpause()
 	change(self)
 end
 
@@ -166,6 +212,9 @@ function class.setPosition<T>(
 	self: Self<T>,
 	newValue: T
 ): ()
+	if not hasSimulation(self) then
+		return
+	end
 	evaluate(self, false) -- ensure the _active params are up to date
 	local newType = typeof(newValue)
 	if newType ~= self._activeType then
@@ -173,8 +222,9 @@ function class.setPosition<T>(
 	end
 	self._activeStartP = unpackType(newValue, newType)
 	self._activeStartV = table.clone(self._activeLatestV)
-	self._stopwatch:zero()
-	self._stopwatch:unpause()
+	local stopwatch = self._stopwatch :: Stopwatch.Stopwatch
+	stopwatch:zero()
+	stopwatch:unpause()
 	change(self)
 end
 
@@ -182,6 +232,9 @@ function class.setVelocity<T>(
 	self: Self<T>,
 	newValue: T?
 ): ()
+	if not hasSimulation(self) then
+		return
+	end
 	evaluate(self, false) -- ensure the _active params are up to date
 	if newValue then
 		local newType = typeof(newValue)
@@ -193,8 +246,9 @@ function class.setVelocity<T>(
 		self._activeStartV = table.create(self._activeNumSprings, 0)
 	end
 	self._activeStartP = table.clone(self._activeLatestP)
-	self._stopwatch:zero()
-	self._stopwatch:unpause()
+	local stopwatch = self._stopwatch :: Stopwatch.Stopwatch
+	stopwatch:zero()
+	stopwatch:unpause()
 	change(self)
 end
 
@@ -277,16 +331,33 @@ function class._evaluate<T>(
 			stopwatch:pause()
 			stopwatch:zero()
 		end
-		-- Pack springs into final value.
-		newValue = packType(self._activeLatestP, self._activeType) :: any
+		if self._activeNumSprings == 0 then
+			newValue = nextFrameGoal
+		else
+			-- Pack springs into final value.
+			newValue = packType(self._activeLatestP, self._activeType) :: any
+		end
 	end
 
 	-- Reconfigure spring when any of its parameters are changed.
 	-- This should happen after integrating the last frame's motion.
 	-- NOTE: don't need to add a dependency on these objects! they do not cause
 	-- a spring to wake from sleep, so the stopwatch dependency is sufficient.
-	local nextFrameSpeed = peek(self._speed) :: number
-	local nextFrameDamping = peek(self._damping) :: number
+	local nextFrameSpeed, nextFrameDamping
+	nextFrameSpeed, self._reportedSpeed = sanitiseParameter(
+		peek(self._speed),
+		if self._activeSpeed >= 0 then self._activeSpeed else DEFAULT_SPEED,
+		self._reportedSpeed,
+		"mistypedSpringSpeed",
+		"invalidSpringSpeed"
+	)
+	nextFrameDamping, self._reportedDamping = sanitiseParameter(
+		peek(self._damping),
+		if self._activeDamping >= 0 then self._activeDamping else DEFAULT_DAMPING,
+		self._reportedDamping,
+		"mistypedSpringDamping",
+		"invalidSpringDamping"
+	)
 	if
 		discontinuous or
 		nextFrameGoal ~= self._activeGoal or
