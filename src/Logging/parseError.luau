@@ -18,7 +18,7 @@ local function parseError(
 	return {
 		type = "Error",
 		raw = err,
-		message = (err:gsub("^.+:%d+:%s*", "")),
+		message = (err:gsub("^.-:%d+:%s*", "")),
 		trace = debug.traceback(nil, 2)
 	}
 end

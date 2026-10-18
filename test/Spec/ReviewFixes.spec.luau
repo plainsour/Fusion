@@ -283,4 +283,50 @@ return function()
 		expect(peek(value).Y).to.equal(5)
 		doCleanup(scope)
 	end)
+
+	it("doCleanup runs each chore once when an inner scope removes itself", function()
+		local expect = getfenv().expect
+		local scope = {}
+		local inner = innerScope(scope)
+		local runs = 0
+		table.insert(scope, function()
+			runs += 1
+			doCleanup(inner)
+		end)
+		doCleanup(scope)
+		expect(runs).to.equal(1)
+	end)
+
+	it("Safe passes on errors thrown by fallback", function()
+		local expect = getfenv().expect
+		local Safe = require(Fusion.Utility.Safe)
+		local ok, err = pcall(Safe, {
+			try = function()
+				error("first", 0)
+			end,
+			fallback = function()
+				error("second", 0)
+			end
+		})
+		expect(ok).to.equal(false)
+		expect(err).to.equal("second")
+		local value = Safe {
+			try = function()
+				error("first", 0)
+			end,
+			fallback = function(err)
+				return "caught " .. err
+			end
+		}
+		expect(value).to.equal("caught first")
+	end)
+
+	it("parseError only strips the location prefix", function()
+		local expect = getfenv().expect
+		local ok, err = pcall(function()
+			error("bad time 12:30: invalid")
+		end)
+		expect(ok).to.equal(false)
+		expect(parseError(err).message).to.equal("bad time 12:30: invalid")
+	end)
 end
