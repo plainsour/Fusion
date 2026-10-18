@@ -87,11 +87,13 @@ function class._evaluate<T, S>(
 	local function use<T>(target: Types.UsedAs<T>): T
 		local targetState = castToState(target)
 		if targetState ~= nil then
-			checkLifetime.bOutlivesA(
-				outerScope, self.oldestChore,
-				targetState.scope, targetState.oldestChore,
-				checkLifetime.formatters.useFunction
-			)
+			if targetState.scope == nil then
+				checkLifetime.bOutlivesA(
+					outerScope, self.oldestChore,
+					targetState.scope, targetState.oldestChore,
+					checkLifetime.formatters.useFunction
+				)
+			end
 			return depend(self, targetState) :: T
 		else
 			return target :: T

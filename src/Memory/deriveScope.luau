@@ -15,8 +15,14 @@ local Types = require(Package.Types)
 local ExternalDebug = require(Package.ExternalDebug)
 local deriveScopeImpl = require(Package.Memory.deriveScopeImpl)
 
-local function deriveScope(...)
-	local scope = deriveScopeImpl(...)
+local function deriveScope(
+	existing: any,
+	methods: any,
+	...: any
+): any
+	local scope = if methods == nil
+		then setmetatable({}, getmetatable(existing))
+		else deriveScopeImpl(existing, methods, ...)
 	ExternalDebug.trackScope(scope)
 	return scope
 end
