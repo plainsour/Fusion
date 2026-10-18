@@ -15,7 +15,7 @@ local lastTimestamp = -math.huge
 local function timestamp(): number
 	local now = os.clock()
 	if now <= lastTimestamp then
-		now = lastTimestamp + STEP
+		now = lastTimestamp + math.max(STEP, math.abs(lastTimestamp) * 2^-52)
 	end
 	lastTimestamp = now
 	return now
