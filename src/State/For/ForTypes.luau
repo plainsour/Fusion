@@ -19,15 +19,13 @@ export type SubObject<S, KI, KO, VI, VO> = {
 	invalidateInputKey: (SubObject<S, KI, KO, VI, VO>) -> (),
 	invalidateInputValue: (SubObject<S, KI, KO, VI, VO>) -> (),
 	useOutputPair: (SubObject<S, KI, KO, VI, VO>, Types.Use) -> (KO?, VO?),
-	_usedObjects: {Types.GraphObject}?,
-	_outputKey: KO?,
-	_dirty: boolean?
+	_outputKey: KO?
 }
 
 export type Disassembly<S, KI, KO, VI, VO> = Types.GraphObject & {
 	_membershipChanged: boolean,
 	populate: (Disassembly<S, KI, KO, VI, VO>, Types.Use, output: {[KO]: VO}) -> boolean,
-	patch: (Disassembly<S, KI, KO, VI, VO>, dependent: Types.GraphObject, Types.Use, since: number, output: {[KO]: VO}) -> boolean
+	patch: (Disassembly<S, KI, KO, VI, VO>, Types.Use, output: {[KO]: VO}) -> boolean
 }
 
 return nil

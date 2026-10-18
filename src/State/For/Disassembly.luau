@@ -13,8 +13,6 @@ local External = require(Package.External)
 -- Graph
 local timestamp = require(Package.Graph.timestamp)
 local depend = require(Package.Graph.depend)
-local evaluate = require(Package.Graph.evaluate)
-local castToGraph = require(Package.Graph.castToGraph)
 -- State
 local castToState = require(Package.State.castToState)
 local ForTypes = require(Package.State.For.ForTypes)
@@ -135,66 +133,23 @@ local function useOutputPairRecorded<S, KI, KO, VI, VO>(
 	subObject: ForTypes.SubObject<S, KI, KO, VI, VO>,
 	use: Types.Use
 ): (KO?, VO?)
-	local usedObjects = subObject._usedObjects
-	if usedObjects == nil then
-		usedObjects = {}
-		subObject._usedObjects = usedObjects
-	else
-		table.clear(usedObjects)
-	end
-	local usedObjects = usedObjects :: {Types.GraphObject}
-	local outputKey, outputValue = subObject:useOutputPair(function<T>(
-		maybeState: Types.UsedAs<T>
-	): T
-		local object = castToGraph(maybeState)
-		if object ~= nil then
-			table.insert(usedObjects, object)
-		end
-		return use(maybeState)
-	end)
+	local outputKey, outputValue = subObject:useOutputPair(use)
 	subObject._outputKey = outputKey
-	subObject._dirty = false
 	return outputKey, outputValue
 end
 
 function class.patch<S, KI, KO, VI, VO>(
 	self: Self<S, KI, KO, VI, VO>,
-	dependent: Types.GraphObject,
 	use: Types.Use,
-	since: number,
 	output: {[KO]: VO}
 ): boolean
-	local dependencySet = dependent.dependencySet
 	for subObject in self._subObjects do
-		local usedObjects = subObject._usedObjects
-		if usedObjects == nil then
+		local oldOutputKey = subObject._outputKey
+		local outputKey, outputValue = useOutputPairRecorded(subObject, use)
+		if outputKey == nil or outputValue == nil or not rawequal(outputKey, oldOutputKey) then
 			return false
 		end
-		local changed = subObject._dirty == true
-		if not changed then
-			for _, object in usedObjects do
-				if object.validity ~= "valid" then
-					evaluate(object, false)
-				end
-				local lastChange = object.lastChange
-				if lastChange == nil or lastChange > since then
-					changed = true
-					break
-				end
-			end
-		end
-		if changed then
-			local oldOutputKey = subObject._outputKey
-			local outputKey, outputValue = useOutputPairRecorded(subObject, use)
-			if outputKey == nil or outputValue == nil or outputKey ~= oldOutputKey then
-				return false
-			end
-			output[outputKey] = outputValue
-		else
-			for _, object in usedObjects do
-				dependencySet[object] = true
-			end
-		end
+		output[outputKey] = outputValue
 	end
 	return true
 end
@@ -268,7 +223,8 @@ function class._evaluate<S, KI, KO, VI, VO>(
 	local unmatchedPairs = {} :: {ForTypes.SubObject<S, KI, KO, VI, VO>}
 	local newSubObjects = {} :: typeof(self._subObjects)
 	local valueIndex: {[VI]: {KI}}? = nil
-	local slowKeys: {KI}? = nil
+	local slowKeys: {KI} = {}
+	local bucketCursors: {[VI]: number} = {}
 
 	for subObject in self._subObjects do
 		local oldInputKey = subObject.inputKey
@@ -282,32 +238,36 @@ function class._evaluate<S, KI, KO, VI, VO>(
 			if subObject.roamValues then
 				table.insert(unmatchedPairs, subObject)
 				continue
-			elseif isIndexable(oldInputValue) then
-				if valueIndex == nil then
-					valueIndex, slowKeys = buildValueIndex(pendingPairs)
-				end
-				local keys = (valueIndex :: any)[oldInputValue]
+			end
+			local useIndex = isIndexable(oldInputValue)
+			if useIndex and valueIndex == nil then
+				valueIndex, slowKeys = buildValueIndex(pendingPairs)
+			end
+			if useIndex and type(oldInputValue) == "table" and #slowKeys > 0 then
+				useIndex = false
+			end
+			if useIndex then
+				local keys = (valueIndex :: {[VI]: {KI}})[oldInputValue]
 				if keys ~= nil then
-					while #keys > 0 do
-						local pendingKey = table.remove(keys)
+					local cursor = bucketCursors[oldInputValue] or 1
+					while keys[cursor] ~= nil do
+						local pendingKey = keys[cursor]
+						cursor += 1
 						if pendingPairs[pendingKey] ~= nil then
 							newInputKey, newInputValue = pendingKey, pendingPairs[pendingKey]
 							break
 						end
 					end
+					bucketCursors[oldInputValue] = cursor
 				end
 				if newInputKey == nil then
-					for _, pendingKey in slowKeys :: {KI} do
+					for _, pendingKey in slowKeys do
 						local pendingValue = pendingPairs[pendingKey]
 						if pendingValue ~= nil and pendingValue == oldInputValue then
 							newInputKey, newInputValue = pendingKey, pendingValue
 							break
 						end
 					end
-				end
-				if newInputKey == nil then
-					table.insert(unmatchedPairs, subObject)
-					continue
 				end
 			else
 				for pendingKey, pendingValue in pendingPairs do
@@ -318,10 +278,10 @@ function class._evaluate<S, KI, KO, VI, VO>(
 						break
 					end
 				end
-				if newInputKey == nil then
-					table.insert(unmatchedPairs, subObject)
-					continue
-				end
+			end
+			if newInputKey == nil then
+				table.insert(unmatchedPairs, subObject)
+				continue
 			end
 		end
 
@@ -329,12 +289,10 @@ function class._evaluate<S, KI, KO, VI, VO>(
 		if newInputKey ~= oldInputKey then
 			subObject.inputKey = newInputKey
 			subObject:invalidateInputKey()
-			subObject._dirty = true
 		end
 		if newInputValue ~= oldInputValue then
 			subObject.inputValue = newInputValue
 			subObject:invalidateInputValue()
-			subObject._dirty = true
 		end
 		pendingPairs[newInputKey] = nil
 	end
@@ -348,12 +306,10 @@ function class._evaluate<S, KI, KO, VI, VO>(
 			if newInputKey ~= oldInputKey then
 				subObject.inputKey = newInputKey :: KI
 				subObject:invalidateInputKey()
-				subObject._dirty = true
 			end
 			if newInputValue ~= oldInputValue then
 				subObject.inputValue = newInputValue :: VI
 				subObject:invalidateInputValue()
-				subObject._dirty = true
 			end
 			pendingPairs[newInputKey] = nil
 		else

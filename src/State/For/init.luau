@@ -92,7 +92,7 @@ function class._evaluate<S, KI, KO, VI, VO>(
 		since ~= nil and
 		self._canPatch and
 		not disassembly._membershipChanged and
-		disassembly:patch(self, use, since, output)
+		disassembly:patch(use, output)
 	then
 		return true
 	end
