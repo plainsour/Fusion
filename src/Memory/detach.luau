@@ -21,15 +21,31 @@ local function removeFromScope(
 	return true
 end
 
+local function removeObjectFromScope(
+	scope: Types.Scope<unknown>,
+	chore: unknown
+): boolean
+	if removeFromScope(scope, chore) then
+		return true
+	end
+	if type(chore) == "table" then
+		local oldestChore = (chore :: any).oldestChore
+		if oldestChore ~= nil then
+			return removeFromScope(scope, oldestChore)
+		end
+	end
+	return false
+end
+
 local function detach<Chores...>(
 	scope: Types.Scope<unknown>,
 	...: Chores...
 ): Chores...
 	for i = 1, select("#", ...) do
 		local chore = select(i, ...)
-		if not removeFromScope(scope, chore) and type(chore) == "table" then
-			for _, item in chore :: {[unknown]: unknown} do
-				removeFromScope(scope, item)
+		if not removeObjectFromScope(scope, chore) and type(chore) == "table" then
+			for _, item in ipairs(chore :: {unknown}) do
+				removeObjectFromScope(scope, item)
 			end
 		end
 	end
