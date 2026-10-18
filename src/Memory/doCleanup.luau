@@ -97,7 +97,7 @@ local function cleanupChore(
 			local index = #chore
 			while index > 0 do
 				local item = chore[index]
-				chore[index] = nil
+				local nextIndex = index - 1
 				if item ~= nil then
 					local ok, err
 					if type(item) == "table" or item ~= item or alreadyDestroying[item] then
@@ -110,8 +110,21 @@ local function cleanupChore(
 					if not ok and firstError == nil then
 						firstError = err
 					end
+					if not rawequal(chore[index], item) then
+						local position = index - 1
+						while position > 0 and chore[position] == nil do
+							position -= 1
+						end
+						if position > 0 and rawequal(chore[position], item) then
+							chore[position] = nil
+							nextIndex = position - 1
+						else
+							nextIndex = position
+						end
+					end
 				end
-				index -= 1
+				chore[index] = nil
+				index = nextIndex
 			end
 
 			ExternalDebug.untrackScope(chore)
