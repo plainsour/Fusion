@@ -35,52 +35,67 @@ local function change(
 	end
 
 	local meaningfullyChanged = evaluate(target, true)
-	if not meaningfullyChanged or next(target.dependentSet) == nil then
+	if not meaningfullyChanged then
 		return
 	end
 
-	local searchInNow: {Types.GraphObject} = {}
-	local searchInNext: {Types.GraphObject} = {}
-	local invalidateList: {Types.GraphObject} = {}
+	local queue: {Types.GraphObject}? = nil
+	for dependent in target.dependentSet do
+		if dependent.validity == "valid" then
+			dependent.validity = "invalid"
+			if queue == nil then
+				queue = {dependent}
+			else
+				table.insert(queue, dependent)
+			end
+		end
+	end
+	if queue == nil then
+		return
+	end
+	local queue = queue :: {Types.GraphObject}
 
-	searchInNow[1] = target
 	local terminateBy = os.clock() + TERMINATION_TIME * External.safetyTimerMultiplier
+	local searchFrom = 1
 	repeat
 		if os.clock() > terminateBy then
 			return External.logError("infiniteLoop")
 		end
-		local done = true
-		for _, searchTarget in searchInNow do
-			for dependent in searchTarget.dependentSet do
+		local searchTo = #queue
+		for index = searchFrom, searchTo do
+			for dependent in queue[index].dependentSet do
 				if dependent.validity == "valid" then
-					done = false
 					dependent.validity = "invalid"
-					table.insert(invalidateList, dependent)
-					table.insert(searchInNext, dependent)
+					table.insert(queue, dependent)
 				end
 			end
 		end
-		searchInNow, searchInNext = searchInNext, searchInNow
-		table.clear(searchInNext)
-	until done
+		searchFrom = searchTo + 1
+	until searchFrom > #queue
 
-	local eagerList: {Types.GraphObject} = {}
-
-	for _, invalidateTarget in invalidateList do
+	local eagerCount = 0
+	for _, invalidateTarget in queue do
 		if invalidateTarget.timeliness == "eager" then
-			table.insert(eagerList, invalidateTarget)
+			eagerCount += 1
+			queue[eagerCount] = invalidateTarget
 		end
+	end
+	for index = #queue, eagerCount + 1, -1 do
+		queue[index] = nil
 	end
 
 	-- If objects are not executed in order of creations, then dynamic graphs
 	-- may experience 'glitches' where nested graph objects see intermediate
 	-- values before being destroyed.
 	-- https://fluff.blog/2024/07/14/glitches-in-dynamic-reactive-graphs.html
-	if #eagerList > 1 then
-		table.sort(eagerList, byCreation)
+	for index = 2, eagerCount do
+		if queue[index - 1].createdAt > queue[index].createdAt then
+			table.sort(queue, byCreation)
+			break
+		end
 	end
 
-	for _, eagerTarget in eagerList do
+	for _, eagerTarget in queue do
 		evaluate(eagerTarget, false)
 	end
 end
