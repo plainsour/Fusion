@@ -104,6 +104,13 @@ function class._evaluate(
 ): boolean
 	local value = depend(self, self._watching)
 	local listeners = self._changeListeners :: {[any]: Types.ObserverCallback<any>}
+	local firstID, firstCallback = next(listeners)
+	if firstID == nil then
+		return true
+	elseif next(listeners, firstID) == nil then
+		External.doChoreImmediate(firstCallback, value)
+		return true
+	end
 	for id, callback in table.clone(listeners) do
 		if listeners[id] == callback then
 			External.doChoreImmediate(callback, value)
