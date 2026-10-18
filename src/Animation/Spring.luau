@@ -98,23 +98,61 @@ class.timeliness = "eager"
 
 local METATABLE = table.freeze {__index = class}
 
+local TAU = 2 * math.pi
+
 local function unwrapRotation(
 	numbers: {number},
 	towards: {number}
 ): ()
-	local rotation = Vector3.new(numbers[4], numbers[5], numbers[6])
-	local reference = Vector3.new(towards[4], towards[5], towards[6])
-	local axis = if rotation.Magnitude > 0
-		then rotation.Unit
-		elseif reference.Magnitude > 0 then reference.Unit
-		else nil
-	if axis == nil then
+	local x, y, z = numbers[4], numbers[5], numbers[6]
+	local referenceX, referenceY, referenceZ = towards[4], towards[5], towards[6]
+	local angle = math.sqrt(x * x + y * y + z * z)
+	local axisX, axisY, axisZ
+	if angle > 0 then
+		axisX, axisY, axisZ = x / angle, y / angle, z / angle
+	else
+		local reference = math.sqrt(
+			referenceX * referenceX + referenceY * referenceY + referenceZ * referenceZ
+		)
+		if reference == 0 then
+			return
+		end
+		axisX, axisY, axisZ = referenceX / reference, referenceY / reference, referenceZ / reference
+	end
+	local along = axisX * (referenceX - x) + axisY * (referenceY - y) + axisZ * (referenceZ - z)
+	local turns = math.round(along / TAU)
+	if turns ~= 0 then
+		numbers[4] = x + axisX * TAU * turns
+		numbers[5] = y + axisY * TAU * turns
+		numbers[6] = z + axisZ * TAU * turns
+	end
+end
+
+local function rewrapRotation(
+	positions: {number},
+	velocities: {number}
+): ()
+	local x, y, z = positions[4], positions[5], positions[6]
+	local angle = math.sqrt(x * x + y * y + z * z)
+	if angle <= math.pi then
 		return
 	end
-	local turns = math.round(axis:Dot(reference - rotation) / (2 * math.pi))
-	if turns ~= 0 then
-		rotation += axis * (2 * math.pi * turns)
-		numbers[4], numbers[5], numbers[6] = rotation.X, rotation.Y, rotation.Z
+	local scale = (angle - TAU * math.round(angle / TAU)) / angle
+	local axisX, axisY, axisZ = x / angle, y / angle, z / angle
+	local velocityX, velocityY, velocityZ = velocities[4], velocities[5], velocities[6]
+	local along = velocityX * axisX + velocityY * axisY + velocityZ * axisZ
+	positions[4], positions[5], positions[6] = x * scale, y * scale, z * scale
+	velocities[4] = along * axisX + (velocityX - along * axisX) * scale
+	velocities[5] = along * axisY + (velocityY - along * axisY) * scale
+	velocities[6] = along * axisZ + (velocityZ - along * axisZ) * scale
+end
+
+local function boundRotation(
+	self: Self<any>
+): ()
+	if self._activeType == "CFrame" then
+		rewrapRotation(self._activeLatestP, self._activeLatestV)
+		unwrapRotation(self._activeTargetP, self._activeLatestP)
 	end
 end
 
@@ -217,6 +255,7 @@ function class.addVelocity<T>(
 	if deltaType ~= self._activeType then
 		External.logError("springTypeMismatch", nil, deltaType, self._activeType)
 	end
+	boundRotation(self)
 	local newStartV = unpackType(deltaValue, deltaType)
 	for index, velocity in self._activeLatestV do
 		newStartV[index] += velocity
@@ -243,7 +282,7 @@ function class.setPosition<T>(
 	end
 	self._activeStartP = unpackType(newValue, newType)
 	if newType == "CFrame" then
-		unwrapRotation(self._activeStartP, self._activeTargetP)
+		unwrapRotation(self._activeTargetP, self._activeStartP)
 	end
 	self._activeStartV = table.clone(self._activeLatestV)
 	local stopwatch = self._stopwatch :: Stopwatch.Stopwatch
@@ -260,6 +299,7 @@ function class.setVelocity<T>(
 		return
 	end
 	evaluate(self, false) -- ensure the _active params are up to date
+	boundRotation(self)
 	if newValue then
 		local newType = typeof(newValue)
 		if newType ~= self._activeType then
@@ -390,6 +430,7 @@ function class._evaluate<T>(
 	then
 		self._activeTargetP = unpackType(nextFrameGoal, nextFrameGoalType)
 		if not discontinuous and nextFrameGoalType == "CFrame" then
+			rewrapRotation(self._activeLatestP, self._activeLatestV)
 			unwrapRotation(self._activeTargetP, self._activeLatestP)
 		end
 		self._activeNumSprings = #self._activeTargetP
