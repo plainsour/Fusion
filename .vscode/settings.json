@@ -2,6 +2,8 @@
     "robloxLsp.diagnostics.disable": [
         "undefined-type",
         "undefined-variable",
-        "redefined-local"
+        "redefined-local",
+        "redefined-type",
+        "no-implicit-any"
     ]
 }
