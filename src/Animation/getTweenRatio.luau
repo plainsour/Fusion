@@ -10,16 +10,46 @@ local task = nil -- Disable usage of Roblox's task scheduler
 
 local TweenService = game:GetService("TweenService")
 
+type TweenFields = {
+	delay: number,
+	duration: number,
+	reverses: boolean,
+	repeatCount: number,
+	easeStyle: Enum.EasingStyle,
+	easeDirection: Enum.EasingDirection
+}
+
+local fieldCache: {[TweenInfo]: TweenFields} = setmetatable({}, {__mode = "k"}) :: any
+
+local function getFields(
+	tweenInfo: TweenInfo
+): TweenFields
+	local fields = fieldCache[tweenInfo]
+	if fields == nil then
+		fields = {
+			delay = tweenInfo.DelayTime,
+			duration = tweenInfo.Time,
+			reverses = tweenInfo.Reverses,
+			repeatCount = tweenInfo.RepeatCount,
+			easeStyle = tweenInfo.EasingStyle,
+			easeDirection = tweenInfo.EasingDirection
+		}
+		fieldCache[tweenInfo] = fields
+	end
+	return fields :: TweenFields
+end
+
 local function getTweenRatio(
 	tweenInfo: TweenInfo,
 	currentTime: number
 ): number
-	local delay = tweenInfo.DelayTime
-	local duration = tweenInfo.Time
-	local reverses = tweenInfo.Reverses
-	local numCycles = 1 + tweenInfo.RepeatCount
-	local easeStyle = tweenInfo.EasingStyle
-	local easeDirection = tweenInfo.EasingDirection
+	local fields = getFields(tweenInfo)
+	local delay = fields.delay
+	local duration = fields.duration
+	local reverses = fields.reverses
+	local numCycles = 1 + fields.repeatCount
+	local easeStyle = fields.easeStyle
+	local easeDirection = fields.easeDirection
 	local cycleDuration = delay + duration
 	if reverses then
 		cycleDuration += duration
@@ -29,7 +59,7 @@ local function getTweenRatio(
 	if currentTime == math.huge then
 		return 1
 	end
-	if currentTime >= cycleDuration * numCycles and tweenInfo.RepeatCount > -1 then
+	if currentTime >= cycleDuration * numCycles and fields.repeatCount > -1 then
 		return 1
 	end
 	local cycleTime = currentTime % cycleDuration
