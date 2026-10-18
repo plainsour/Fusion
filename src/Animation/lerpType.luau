@@ -58,10 +58,9 @@ local function lerpType(
 
 		elseif typeString == "NumberRange" then
 			local to, from = to :: NumberRange, from :: NumberRange
-			return NumberRange.new(
-				(to.Min - from.Min) * ratio + from.Min,
-				(to.Max - from.Max) * ratio + from.Max
-			)
+			local min = (to.Min - from.Min) * ratio + from.Min
+			local max = (to.Max - from.Max) * ratio + from.Max
+			return NumberRange.new(math.min(min, max), math.max(min, max))
 
 		elseif typeString == "NumberSequenceKeypoint" then
 			local to, from = to :: NumberSequenceKeypoint, from :: NumberSequenceKeypoint

@@ -46,7 +46,10 @@ local function packType(
 		return DateTime.fromUnixTimestampMillis(numbers[1])
 
 	elseif typeString == "NumberRange" then
-		return NumberRange.new(numbers[1], numbers[2])
+		return NumberRange.new(
+			math.min(numbers[1], numbers[2]),
+			math.max(numbers[1], numbers[2])
+		)
 
 	elseif typeString == "NumberSequenceKeypoint" then
 		return NumberSequenceKeypoint.new(numbers[2], numbers[1], numbers[3])

@@ -258,4 +258,15 @@ return function()
 		local derived = deriveScope({}, {foo = 1})
 		expect(derived.foo).to.equal(1)
 	end)
+
+	it("NumberRange tweens and springs survive overshooting", function()
+		local expect = getfenv().expect
+		local lerpType = require(Fusion.Animation.lerpType)
+		local packType = require(Fusion.Animation.packType)
+		local range = lerpType(NumberRange.new(0, 10), NumberRange.new(0, 0), 1.1)
+		expect(range.Min <= range.Max).to.equal(true)
+		local packed = packType({0, -1}, "NumberRange")
+		expect(packed.Min).to.equal(-1)
+		expect(packed.Max).to.equal(0)
+	end)
 end
