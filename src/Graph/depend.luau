@@ -12,7 +12,6 @@ local Types = require(Package.Types)
 local External = require(Package.External)
 local evaluate = require(Package.Graph.evaluate)
 local castToGraph = require(Package.Graph.castToGraph)
-local castToState = require(Package.State.castToState)
 local nameOf = require(Package.Utility.nameOf)
 
 local depend = function<T>(
@@ -25,7 +24,9 @@ local depend = function<T>(
 		-- when they are depended on. Also, newly created objects
 		-- might not have any transitive dependencies captured yet,
 		-- so ensure that they're present.
-		evaluate(dependency, false)
+		if dependency.validity ~= "valid" or dependency.lastChange == nil then
+			evaluate(dependency, false)
+		end
 
 		if table.isfrozen(dependent.dependencySet) or table.isfrozen(dependency.dependentSet) then
 			External.logError("cannotDepend", nil, nameOf(dependent, "Dependent"), nameOf(dependency, "dependency"))
@@ -33,7 +34,7 @@ local depend = function<T>(
 		dependency.dependentSet[dependent] = true
 		dependent.dependencySet[dependency] = true
 
-		if castToState(dependency) then
+		if (dependency :: any).type == "State" then
 			return (dependency :: Types.StateObject<T>)._EXTREMELY_DANGEROUS_usedAsValue :: T
 		else
 			return nil
