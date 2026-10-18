@@ -29,12 +29,17 @@ local function formatError(
 	end
 	messageText = messageText:format(...)
 	if error ~= nil then
-		messageText = messageText:gsub("ERROR_MESSAGE", error.message)
+		local errorMessage = error.message
+		messageText = messageText:gsub("ERROR_MESSAGE", function()
+			return errorMessage
+		end)
 		if error.context ~= nil then
 			messageText ..= ` ({error.context})`
 		end
 	else
-		messageText = messageText:gsub("ERROR_MESSAGE", originalMessageID)
+		messageText = messageText:gsub("ERROR_MESSAGE", function()
+			return originalMessageID
+		end)
 	end
 	messageText = `[Fusion] {messageText} \nID: {messageID}`
 	if externalProvider ~= nil and externalProvider.policies.allowWebLinks then
@@ -43,7 +48,7 @@ local function formatError(
 	if trace ~= nil then
 		messageText ..= ` \n---- Stack trace ----\n{trace}`
 	end
-	return messageText:gsub("\n", "\n    ")
+	return (messageText:gsub("\n", "\n    "))
 end
 
 return formatError
