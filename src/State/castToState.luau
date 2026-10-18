@@ -15,7 +15,7 @@ local function castToState<T>(
 ): Types.StateObject<T>?
 	if
 		typeof(target) == "table" and
-		target.type == "State" 
+		target.type == "State"
 	then
 		return target
 	else

@@ -57,7 +57,7 @@ local function Computed<T, S>(
 			_EXTREMELY_DANGEROUS_usedAsValue = nil,
 			_innerScope = nil,
 			_processor = processor
-		}, 
+		},
 		METATABLE
 	) :: any
 	local destroy = function()

@@ -47,7 +47,7 @@ local function Out(
 				end
 				local value = value :: Types.Value<unknown>
 				checkLifetime.bOutlivesA(
-					scope, applyTo, 
+					scope, applyTo,
 					value.scope, value.oldestChore,
 					checkLifetime.formatters.propertyOutputsTo, propertyName
 				)

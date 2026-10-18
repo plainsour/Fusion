@@ -50,7 +50,7 @@ local function AttributeOut(
 				)
 
 				value:set((applyTo :: any):GetAttribute(attributeName))
-				table.insert(scope, event:Connect(function()	
+				table.insert(scope, event:Connect(function()
 					value:set((applyTo :: any):GetAttribute(attributeName))
 				end))
 			end

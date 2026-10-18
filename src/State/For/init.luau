@@ -52,7 +52,7 @@ local function For<S, KI, KO, VI, VO>(
 				inputTable,
 				constructor
 			)
-		}, 
+		},
 		METATABLE
 	) :: any
 
