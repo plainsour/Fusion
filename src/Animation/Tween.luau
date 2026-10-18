@@ -130,8 +130,7 @@ function class._evaluate<T>(
 		self._EXTREMELY_DANGEROUS_usedAsValue = self._goal :: T
 		return false
 	end
-	depend(self, goal)
-	local newTweenTo = peek(goal)
+	local newTweenTo = depend(self, goal)
 	-- Protect against NaN goals.
 	if newTweenTo ~= newTweenTo then
 		External.logWarn("tweenNanGoal")
@@ -161,8 +160,7 @@ function class._evaluate<T>(
 		stopwatch:zero()
 		stopwatch:unpause()
 	end
-	depend(self, stopwatch)
-	self._activeElapsed = peek(stopwatch)
+	self._activeElapsed = depend(self, stopwatch)
 	if
 		self._activeFrom == self._activeTo or -- endpoints match
 		self._activeElapsed >= self._activeDuration or -- animation is done
