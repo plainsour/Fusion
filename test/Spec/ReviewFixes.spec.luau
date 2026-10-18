@@ -507,4 +507,99 @@ return function()
 		end})
 		detach(scope, strict)
 	end)
+
+	it("doCleanup handles chores that remove themselves", function()
+		local expect = getfenv().expect
+		local scope = {}
+		local cleaned = false
+		table.insert(scope, function()
+			cleaned = true
+		end)
+		local function selfRemove()
+			table.remove(scope, table.find(scope, selfRemove))
+		end
+		table.insert(scope, selfRemove)
+		doCleanup(scope)
+		expect(cleaned).to.equal(true)
+	end)
+
+	it("CFrame springs don't keep extra turns between goals", function()
+		local expect = getfenv().expect
+		local scope = {}
+		local goal = Value(scope, CFrame.Angles(0, math.rad(170), 0))
+		local spring = Spring(scope, goal, 20, 1)
+		local now = 2000
+		local function settle()
+			for _ = 1, 240 do
+				now += 1 / 60
+				External.performUpdateStep(now)
+				peek(spring)
+			end
+		end
+		settle()
+		goal:set(CFrame.Angles(0, math.rad(-170), 0))
+		settle()
+		goal:set(CFrame.new())
+		settle()
+		goal:set(CFrame.Angles(math.rad(30), 0, 0))
+		local furthest = 0
+		for _ = 1, 240 do
+			now += 1 / 60
+			External.performUpdateStep(now)
+			local look = peek(spring).LookVector
+			furthest = math.max(furthest, math.deg(math.abs(math.atan2(-look.X, -look.Z))))
+		end
+		expect(furthest < 5).to.equal(true)
+		doCleanup(scope)
+	end)
+
+	it("CFrame spring velocity kicks still work after crossing 180 degrees", function()
+		local expect = getfenv().expect
+		local scope = {}
+		local goal = Value(scope, CFrame.Angles(0, math.rad(170), 0))
+		local spring = Spring(scope, goal, 20, 1)
+		local now = 3000
+		local function settle()
+			for _ = 1, 240 do
+				now += 1 / 60
+				External.performUpdateStep(now)
+				peek(spring)
+			end
+		end
+		settle()
+		goal:set(CFrame.Angles(0, math.rad(-170), 0))
+		settle()
+		goal:set(CFrame.new())
+		settle()
+		spring:addVelocity(CFrame.Angles(5, 0, 0))
+		local peakPitch = 0
+		for _ = 1, 60 do
+			now += 1 / 60
+			External.performUpdateStep(now)
+			local look = peek(spring).LookVector
+			peakPitch = math.max(peakPitch, math.deg(math.abs(math.asin(look.Y))))
+		end
+		expect(peakPitch > 1).to.equal(true)
+		doCleanup(scope)
+	end)
+
+	it("CFrame springs following a spinning goal stay precise", function()
+		local expect = getfenv().expect
+		local scope = {}
+		local angle = 0
+		local goal = Value(scope, CFrame.new())
+		local spring = Spring(scope, goal, 30, 1)
+		local now = 4000
+		for _ = 1, 3000 do
+			angle = (angle + 0.3) % (2 * math.pi)
+			goal:set(CFrame.Angles(0, angle, 0))
+			now += 1 / 60
+			External.performUpdateStep(now)
+			peek(spring)
+		end
+		local latest = (spring :: any)._activeLatestP
+		local magnitude = math.sqrt(latest[4] ^ 2 + latest[5] ^ 2 + latest[6] ^ 2)
+		expect(magnitude < 4 * math.pi).to.equal(true)
+		doCleanup(scope)
+	end)
 end
