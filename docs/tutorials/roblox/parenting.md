@@ -161,4 +161,3 @@ local folder = scope:New "Folder" {
 
 	The `Child` function doesn't do any processing, but instead encourages the
 	Luau type system to infer a more useful type and avoid the problem.
-

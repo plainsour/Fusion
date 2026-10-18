@@ -54,4 +54,3 @@ local input = scope:New "TextBox" {
     end
 }
 ```
-
