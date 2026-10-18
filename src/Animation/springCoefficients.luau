@@ -40,8 +40,8 @@ local function springCoefficients(
 		local exp2 = math.exp(time * z2)
 
 		posPos = (exp2 * z1 - exp1 * z2) * negHalf_over_alpha_speed
-		posVel = (exp1 - exp2) * negHalf_over_alpha_speed / speed
-		velPos = (exp2 - exp1) * negHalf_over_alpha_speed * speed
+		posVel = (exp1 - exp2) * negHalf_over_alpha_speed
+		velPos = (exp2 - exp1) * negHalf_over_alpha_speed * speed * speed
 		velVel = (exp1 * z1 - exp2 * z2) * negHalf_over_alpha_speed
 
 	elseif damping == 1 then
