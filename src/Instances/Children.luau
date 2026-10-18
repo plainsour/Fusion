@@ -81,18 +81,20 @@ return {
 						processChild(value, autoName)
 					end
 
-					local childScope = oldScopes[child]
-					if childScope == nil then
-						-- wasn't previously present
-						childScope = {}
-						Observer(childScope, child):onChange(updateChildren)
-					else
-						-- previously here; we want to reuse, so remove from old
-						-- set so we don't encounter it during unparenting
-						oldScopes[child] = nil
-					end
+					if newScopes[child] == nil then
+						local childScope = oldScopes[child]
+						if childScope == nil then
+							-- wasn't previously present
+							childScope = {}
+							Observer(childScope, child):onChange(updateChildren)
+						else
+							-- previously here; we want to reuse, so remove from
+							-- old set so we don't encounter it during unparenting
+							oldScopes[child] = nil
+						end
 
-					newScopes[child] = childScope
+						newScopes[child] = childScope
+					end
 
 				elseif childType == "table" then
 					-- case 3; table of objects
