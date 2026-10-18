@@ -329,4 +329,31 @@ return function()
 		expect(ok).to.equal(false)
 		expect(parseError(err).message).to.equal("bad time 12:30: invalid")
 	end)
+
+	it("CFrame springs rotate smoothly between opposite rotations", function()
+		local expect = getfenv().expect
+		local packType = require(Fusion.Animation.packType)
+		local unpackType = require(Fusion.Animation.unpackType)
+		local original = CFrame.new(1, 2, 3) * CFrame.Angles(0.3, -0.7, 1.2)
+		local roundTrip = packType(unpackType(original, "CFrame"), "CFrame")
+		for index, component in {original:GetComponents()} do
+			expect(select(index, roundTrip:GetComponents())).to.be.near(component, 1e-5)
+		end
+		local from = unpackType(CFrame.Angles(0, 0, 1), "CFrame")
+		local to = unpackType(CFrame.Angles(0, 0, -1), "CFrame")
+		local lastAngle = 1
+		for step = 1, 20 do
+			local ratio = step / 20
+			local mixed = {}
+			for index, value in from do
+				mixed[index] = value + (to[index] - value) * ratio
+			end
+			local cframe = packType(mixed, "CFrame")
+			local _, _, angle = cframe:ToEulerAnglesXYZ()
+			expect(angle == angle).to.equal(true)
+			expect(math.abs(angle - lastAngle) < 0.2).to.equal(true)
+			lastAngle = angle
+		end
+		expect(lastAngle).to.be.near(-1, 1e-5)
+	end)
 end

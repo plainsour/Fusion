@@ -21,10 +21,9 @@ local function unpackType(
 
 	elseif typeString == "CFrame" then
 		local value = value :: CFrame
-		-- FUTURE: is there a better way of doing this? doing distance
-		-- calculations on `angle` may be incorrect
 		local axis, angle = value:ToAxisAngle()
-		return {value.X, value.Y, value.Z, axis.X, axis.Y, axis.Z, angle}
+		local rotation = axis * angle
+		return {value.X, value.Y, value.Z, rotation.X, rotation.Y, rotation.Z}
 
 	elseif typeString == "Color3" then
 		local value = value :: Color3

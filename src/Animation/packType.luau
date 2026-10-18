@@ -20,12 +20,13 @@ local function packType(
 		return numbers[1]
 
 	elseif typeString == "CFrame" then
-		return
-			CFrame.new(numbers[1], numbers[2], numbers[3]) *
-			CFrame.fromAxisAngle(
-				Vector3.new(numbers[4], numbers[5], numbers[6]).Unit,
-				numbers[7]
-			)
+		local position = CFrame.new(numbers[1], numbers[2], numbers[3])
+		local rotation = Vector3.new(numbers[4], numbers[5], numbers[6])
+		local angle = rotation.Magnitude
+		if angle == 0 then
+			return position
+		end
+		return position * CFrame.fromAxisAngle(rotation / angle, angle)
 
 	elseif typeString == "Color3" then
 		return Oklab.toSRGB(
