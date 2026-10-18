@@ -93,15 +93,17 @@ local function cleanupChore(
 			-- It is important to iterate backwards through the table, since
 			-- objects are added in order of construction.
 			local firstError: unknown = nil
-			for index = #chore, 1, -1 do
+			local index = #chore
+			while index > 0 do
 				local item = chore[index]
+				chore[index] = nil
 				if item ~= nil then
 					local ok, err = pcall(doCleanup, item)
 					if not ok and firstError == nil then
 						firstError = err
 					end
 				end
-				chore[index] = nil
+				index = math.min(index - 1, #chore)
 			end
 
 			ExternalDebug.untrackScope(chore)
