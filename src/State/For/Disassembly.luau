@@ -85,6 +85,49 @@ local function Disassembly<S, KI, KO, VI, VO>(
 	return self
 end
 
+local INDEXABLE_TYPES = table.freeze {
+	boolean = true,
+	string = true,
+	["function"] = true,
+	thread = true,
+	buffer = true,
+	Instance = true,
+	EnumItem = true
+}
+
+local function isIndexable(
+	value: unknown
+): boolean
+	local valueType = typeof(value)
+	if valueType == "number" then
+		return value == value
+	elseif valueType == "table" then
+		return getmetatable(value :: any) == nil
+	else
+		return INDEXABLE_TYPES[valueType] == true
+	end
+end
+
+local function buildValueIndex<K, V>(
+	pendingPairs: {[K]: V}
+): ({[V]: {K}}, {K})
+	local valueIndex: {[V]: {K}} = {}
+	local slowKeys: {K} = {}
+	for key, value in pendingPairs do
+		if isIndexable(value) then
+			local keys = valueIndex[value]
+			if keys == nil then
+				valueIndex[value] = {key}
+			else
+				table.insert(keys, key)
+			end
+		else
+			table.insert(slowKeys, key)
+		end
+	end
+	return valueIndex, slowKeys
+end
+
 function class.populate<S, KI, KO, VI, VO>(
 	self: Self<S, KI, KO, VI, VO>,
 	use: Types.Use,
@@ -150,6 +193,8 @@ function class._evaluate<S, KI, KO, VI, VO>(
 
 	local unmatchedPairs = {} :: {ForTypes.SubObject<S, KI, KO, VI, VO>}
 	local newSubObjects = {} :: typeof(self._subObjects)
+	local valueIndex: {[VI]: {KI}}? = nil
+	local slowKeys: {KI}? = nil
 
 	for subObject in self._subObjects do
 		local oldInputKey = subObject.inputKey
@@ -163,6 +208,33 @@ function class._evaluate<S, KI, KO, VI, VO>(
 			if subObject.roamValues then
 				table.insert(unmatchedPairs, subObject)
 				continue
+			elseif isIndexable(oldInputValue) then
+				if valueIndex == nil then
+					valueIndex, slowKeys = buildValueIndex(pendingPairs)
+				end
+				local keys = (valueIndex :: any)[oldInputValue]
+				if keys ~= nil then
+					while #keys > 0 do
+						local pendingKey = table.remove(keys)
+						if pendingPairs[pendingKey] ~= nil then
+							newInputKey, newInputValue = pendingKey, pendingPairs[pendingKey]
+							break
+						end
+					end
+				end
+				if newInputKey == nil then
+					for _, pendingKey in slowKeys :: {KI} do
+						local pendingValue = pendingPairs[pendingKey]
+						if pendingValue ~= nil and pendingValue == oldInputValue then
+							newInputKey, newInputValue = pendingKey, pendingValue
+							break
+						end
+					end
+				end
+				if newInputKey == nil then
+					table.insert(unmatchedPairs, subObject)
+					continue
+				end
 			else
 				for pendingKey, pendingValue in pendingPairs do
 					if pendingValue == oldInputValue then

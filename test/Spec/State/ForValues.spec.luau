@@ -340,4 +340,68 @@ return function()
 
 		doCleanup(scope)
 	end)
+
+	it("doesn't recompute when equal datatype values roam between keys", function()
+		local expect = getfenv().expect
+
+		local scope = {}
+		local data = Value(scope, {Color3.new(1, 0, 0), Color3.new(0, 1, 0)})
+		local computations = 0
+		local forValues = ForValues(scope, data, function(_, _, value)
+			computations += 1
+			return value.R
+		end)
+		peek(forValues)
+		expect(computations).to.equal(2)
+		data:set({Color3.new(0, 1, 0), Color3.new(1, 0, 0)})
+		peek(forValues)
+		expect(computations).to.equal(2)
+		doCleanup(scope)
+	end)
+
+	it("doesn't recompute NaN values when they roam", function()
+		local expect = getfenv().expect
+
+		local scope = {}
+		local data = Value(scope, {0 / 0, 1})
+		local computations = 0
+		local forValues = ForValues(scope, data, function(_, _, value)
+			computations += 1
+			return value
+		end)
+		peek(forValues)
+		expect(computations).to.equal(2)
+		data:set({1, 0 / 0})
+		peek(forValues)
+		expect(computations).to.equal(2)
+		doCleanup(scope)
+	end)
+
+	it("doesn't recompute when a large array is reversed", function()
+		local expect = getfenv().expect
+
+		local scope = {}
+		local input = {}
+		for i = 1, 500 do
+			input[i] = i
+		end
+		local data = Value(scope, input)
+		local computations = 0
+		local forValues = ForValues(scope, data, function(_, _, value)
+			computations += 1
+			return value * 2
+		end)
+		peek(forValues)
+		expect(computations).to.equal(500)
+		local reversed = {}
+		for i = 1, 500 do
+			reversed[i] = 501 - i
+		end
+		data:set(reversed)
+		local output = peek(forValues)
+		expect(computations).to.equal(500)
+		expect(output[1]).to.equal(1000)
+		expect(output[500]).to.equal(2)
+		doCleanup(scope)
+	end)
 end
