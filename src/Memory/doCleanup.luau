@@ -10,8 +10,9 @@
 	- an RBXScriptConnection - will be disconnected
 	- a thread - will be handled
 	- a function - will be run
-	- a table with a `Destroy` or `destroy` function - will be called
-	- an array - `cleanup` will be called on each item
+	- a table with a `destroy`, `Destroy`, `disconnect` or `Disconnect` function
+	  will be called
+	- an array - `doCleanup` will be called on each item, in reverse order
 ]]
 local Package = script.Parent.Parent
 local Types = require(Package.Types)
@@ -20,14 +21,11 @@ local ExternalDebug = require(Package.ExternalDebug)
 
 local alreadyDestroying: {[Types.Chore]: true} = {}
 
-local function doCleanup(
+local doCleanup: (Types.Chore) -> ()
+
+local function cleanupChore(
 	chore: Types.Chore
 ): ()
-	if alreadyDestroying[chore] then
-		return External.logError("destroyedTwice")
-	end
-	alreadyDestroying[chore] = true
-
 	-- case 1: Instance
 	if typeof(chore) == "Instance" then
 		chore:Destroy()
@@ -87,22 +85,46 @@ local function doCleanup(
 			local chore = (chore :: any) :: {Disconnect: (...unknown) -> (...unknown)}
 			chore:Disconnect()
 
-		-- case 9: table of chores with an array part
-		elseif chore[1] ~= nil then
+		-- case 9: table of chores (including empty scopes)
+		else
 			local chore = chore :: {Types.Chore}
 
 			-- It is important to iterate backwards through the table, since
 			-- objects are added in order of construction.
+			local firstError: unknown = nil
 			for index = #chore, 1, -1 do
-				doCleanup(chore[index])
+				local item = chore[index]
+				if item ~= nil then
+					local ok, err = pcall(doCleanup, item)
+					if not ok and firstError == nil then
+						firstError = err
+					end
+				end
 				chore[index] = nil
 			end
 
 			ExternalDebug.untrackScope(chore)
+
+			if firstError ~= nil then
+				error(firstError, 0)
+			end
 		end
 	end
+end
 
+function doCleanup(
+	chore: Types.Chore
+): ()
+	if alreadyDestroying[chore] then
+		return External.logError("destroyedTwice")
+	end
+	alreadyDestroying[chore] = true
+
+	local ok, err = pcall(cleanupChore, chore)
 	alreadyDestroying[chore] = nil
+	if not ok then
+		error(err, 0)
+	end
 end
 
 return doCleanup
