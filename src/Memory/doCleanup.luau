@@ -26,19 +26,20 @@ local doCleanup: (Types.Chore) -> ()
 local function cleanupChore(
 	chore: Types.Chore
 ): ()
+	local choreType = typeof(chore)
 	-- case 1: Instance
-	if typeof(chore) == "Instance" then
+	if choreType == "Instance" then
 		chore:Destroy()
 
 	-- case 2: RBXScriptConnection
-	elseif typeof(chore) == "RBXScriptConnection" then
+	elseif choreType == "RBXScriptConnection" then
 		chore:Disconnect()
 
 	-- case 3: thread
 	-- TODO: This was added as a bandaid patch for cleaning up threads in Roblox.
 	-- This will not work in other environments and should ideally be updated to handle
 	-- coroutines and Roblox threads separately.
-	elseif typeof(chore) == "thread" then
+	elseif choreType == "thread" then
 		local cancelled
 		if coroutine.running() ~= chore then
 			cancelled = pcall(function()
@@ -54,10 +55,10 @@ local function cleanupChore(
 		end
 
 	-- case 4: callback
-	elseif typeof(chore) == "function" then
+	elseif choreType == "function" then
 		chore()
 
-	elseif typeof(chore) == "table" then
+	elseif choreType == "table" then
 		local chore = (chore :: any) :: {
 			destroy: (...unknown) -> (...unknown)?,
 			Destroy: (...unknown) -> (...unknown)?,
