@@ -10,7 +10,7 @@
 </h1>
 
 ```Lua
-export type Child = Instance | StateObject<Child> | {[unknown]: Child}
+export type Child = Instance | StateObject<Child?> | {[unknown]: Child}
 ```
 
 All of the types understood by the [`[Children]`](../../members/children)

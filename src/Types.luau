@@ -193,7 +193,7 @@ export type SpecialKey = {
 }
 
 -- A collection of instances that may be parented to another instance.
-export type Child = Instance | StateObject<Child> | {[unknown]: Child}
+export type Child = Instance | StateObject<Child?> | {[unknown]: Child}
 
 -- A table that defines an instance's properties, handlers and children.
 export type PropertyTable = {[string | SpecialKey]: unknown}
