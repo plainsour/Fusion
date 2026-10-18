@@ -390,4 +390,121 @@ return function()
 		end)
 		expect(#captured).to.equal(1)
 	end)
+
+	it("For objects drop old keys that are equal but not identical", function()
+		local expect = getfenv().expect
+		local scope = {}
+		local mult = Value(scope, 1)
+		local forPairs = ForPairs(scope, {a = 1}, function(use, _, _, value)
+			return Vector2.new(1, 1), value * use(mult)
+		end)
+		peek(forPairs)
+		mult:set(2)
+		local count = 0
+		for _, value in peek(forPairs) do
+			count += 1
+			expect(value).to.equal(2)
+		end
+		expect(count).to.equal(1)
+		doCleanup(scope)
+	end)
+
+	it("For objects reuse the first of several duplicate values", function()
+		local expect = getfenv().expect
+		local scope = {}
+		local items = Value(scope, {"x"})
+		local forValues = ForValues(scope, items, function(_, _, value)
+			return {value}
+		end)
+		local first = peek(forValues)[1]
+		items:set({"x", "x"})
+		expect(peek(forValues)[1]).to.equal(first)
+		doCleanup(scope)
+	end)
+
+	it("For objects pick up values a Computed stored as similar", function()
+		local expect = getfenv().expect
+		local scope = {}
+		local locale = Value(scope, "en")
+		local other = Value(scope, 0)
+		local byID = {__eq = function(a, b) return a.id == b.id end}
+		local forValues = ForValues(scope, {1, 2}, function(use, _, value)
+			if value == 1 then
+				return setmetatable({id = 1, label = use(locale)}, byID)
+			end
+			return {use(other)}
+		end)
+		peek(forValues)
+		locale:set("fr")
+		other:set(1)
+		expect(peek(forValues)[1].label).to.equal("fr")
+		doCleanup(scope)
+	end)
+
+	it("doCleanup cleans every chore in a scope with holes", function()
+		local expect = getfenv().expect
+		local ran = {}
+		local scope = {}
+		for index = 1, 8 do
+			scope[index] = function()
+				table.insert(ran, index)
+			end
+		end
+		scope[3] = nil
+		scope[5] = nil
+		doCleanup(scope)
+		expect(#ran).to.equal(6)
+	end)
+
+	it("doCleanup keeps going after a NaN chore", function()
+		local expect = getfenv().expect
+		local ran = 0
+		local scope = {
+			function() ran += 1 end,
+			0 / 0,
+			function() ran += 1 end
+		}
+		pcall(doCleanup, scope)
+		expect(ran).to.equal(2)
+	end)
+
+	it("CFrame springs take the short way across 180 degrees", function()
+		local expect = getfenv().expect
+		local scope = {}
+		local goal = Value(scope, CFrame.Angles(0, math.rad(170), 0))
+		local spring = Spring(scope, goal, 20, 1)
+		local now = 1000
+		local function step()
+			now += 1 / 60
+			External.performUpdateStep(now)
+			return peek(spring)
+		end
+		for _ = 1, 5 do
+			step()
+		end
+		goal:set(CFrame.Angles(0, math.rad(-170), 0))
+		local furthest = 0
+		for _ = 1, 120 do
+			local look = step().LookVector
+			local yaw = math.deg(math.atan2(-look.X, -look.Z))
+			furthest = math.max(furthest, math.abs((yaw % 360) - 180))
+		end
+		expect(furthest < 15).to.equal(true)
+		doCleanup(scope)
+	end)
+
+	it("detach still walks plain dictionaries of chores", function()
+		local expect = getfenv().expect
+		local scope = {}
+		local a = function() end
+		local b = function() end
+		table.insert(scope, a)
+		table.insert(scope, b)
+		detach(scope, {first = a, second = b})
+		expect(#scope).to.equal(0)
+		local strict = setmetatable({}, {__index = function(_, key)
+			error("no field " .. tostring(key))
+		end})
+		detach(scope, strict)
+	end)
 end
