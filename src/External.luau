@@ -12,8 +12,6 @@ local Package = script.Parent
 local formatError = require(Package.Logging.formatError)
 local Types = require(Package.Types)
 
-local ERROR_INFO_URL = "https://elttob.uk/Fusion/0.3/api-reference/general/errors/#"
-
 local External = {}
 
 -- Multiplier for running-time safety checks across the Fusion codebase. Used to
@@ -43,7 +41,7 @@ function External.setExternalProvider(
 end
 
 --[[
-   Sends an immediate task to the external provider. Throws if none is set.
+	Sends an immediate task to the external provider. Throws if none is set.
 ]]
 function External.doChoreImmediate(
 	resume: (...any) -> (),

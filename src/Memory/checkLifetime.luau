@@ -65,15 +65,6 @@ function checkLifetime.formatters.attributeOutputsTo(
 	return `The {boundName} (which the {attribute} attribute outputs to)`, `the {selfName} instance`
 end
 
-function checkLifetime.formatters.refOutputsTo(
-	instance: Instance,
-	bound: unknown
-): (string, string)
-	local selfName = instance.Name
-	local boundName = nameOf(bound, "object")
-	return `The {boundName} (which the Ref key outputs to)`, `the {selfName} instance`
-end
-
 function checkLifetime.formatters.animationGoal(
 	self: unknown,
 	goal: unknown

@@ -4,7 +4,7 @@
 local task = nil -- Disable usage of Roblox's task scheduler
 
 --[[
-    A variant of xpcall() designed for inline usage, letting you define fallback
+	A variant of xpcall() designed for inline usage, letting you define fallback
 	values based on caught errors.
 ]]
 
