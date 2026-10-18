@@ -22,11 +22,14 @@ local function innerScope<T>(
 		new,
 		function()
 			local chores = existing :: {Types.Chore}
-			for index = #chores, 1, -1 do
-				if chores[index] == new then
-					table.remove(chores, index)
-					break
-				end
+			local last = #chores
+			if last > 0 and chores[last] == new then
+				table.remove(chores, last)
+				return
+			end
+			local index = table.find(chores, new)
+			if index ~= nil then
+				table.remove(chores, index)
 			end
 		end
 	)
