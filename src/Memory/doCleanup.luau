@@ -123,6 +123,18 @@ function doCleanup(
 	if alreadyDestroying[chore] then
 		return External.logError("destroyedTwice")
 	end
+	if type(chore) == "table" and next(chore :: any) == nil then
+		local chore = chore :: any
+		if
+			typeof(chore.destroy) ~= "function" and
+			typeof(chore.Destroy) ~= "function" and
+			typeof(chore.disconnect) ~= "function" and
+			typeof(chore.Disconnect) ~= "function"
+		then
+			ExternalDebug.untrackScope(chore)
+			return
+		end
+	end
 	alreadyDestroying[chore] = true
 
 	local ok, err = pcall(cleanupChore, chore)
