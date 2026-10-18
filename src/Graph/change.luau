@@ -47,6 +47,7 @@ local function change(
 			for dependent in searchTarget.dependentSet do
 				if dependent.validity == "valid" then
 					done = false
+					dependent.validity = "invalid"
 					table.insert(invalidateList, dependent)
 					table.insert(searchInNext, dependent)
 				end
@@ -59,7 +60,6 @@ local function change(
 	local eagerList: {Types.GraphObject} = {}
 
 	for _, invalidateTarget in invalidateList do
-		invalidateTarget.validity = "invalid"
 		if invalidateTarget.timeliness == "eager" then
 			table.insert(eagerList, invalidateTarget)
 		end
