@@ -98,6 +98,26 @@ class.timeliness = "eager"
 
 local METATABLE = table.freeze {__index = class}
 
+local function unwrapRotation(
+	numbers: {number},
+	towards: {number}
+): ()
+	local rotation = Vector3.new(numbers[4], numbers[5], numbers[6])
+	local reference = Vector3.new(towards[4], towards[5], towards[6])
+	local axis = if rotation.Magnitude > 0
+		then rotation.Unit
+		elseif reference.Magnitude > 0 then reference.Unit
+		else nil
+	if axis == nil then
+		return
+	end
+	local turns = math.round(axis:Dot(reference - rotation) / (2 * math.pi))
+	if turns ~= 0 then
+		rotation += axis * (2 * math.pi * turns)
+		numbers[4], numbers[5], numbers[6] = rotation.X, rotation.Y, rotation.Z
+	end
+end
+
 local function Spring<T>(
 	scope: Types.Scope<unknown>,
 	goal: Types.UsedAs<T>,
@@ -222,6 +242,9 @@ function class.setPosition<T>(
 		External.logError("springTypeMismatch", nil, newType, self._activeType)
 	end
 	self._activeStartP = unpackType(newValue, newType)
+	if newType == "CFrame" then
+		unwrapRotation(self._activeStartP, self._activeTargetP)
+	end
 	self._activeStartV = table.clone(self._activeLatestV)
 	local stopwatch = self._stopwatch :: Stopwatch.Stopwatch
 	stopwatch:zero()
@@ -366,6 +389,9 @@ function class._evaluate<T>(
 		nextFrameDamping ~= self._activeDamping
 	then
 		self._activeTargetP = unpackType(nextFrameGoal, nextFrameGoalType)
+		if not discontinuous and nextFrameGoalType == "CFrame" then
+			unwrapRotation(self._activeTargetP, self._activeLatestP)
+		end
 		self._activeNumSprings = #self._activeTargetP
 		if discontinuous then
 			self._activeStartP = table.clone(self._activeTargetP)
