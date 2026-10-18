@@ -15,7 +15,6 @@ local Package = script.Parent
 local Types = require(Package.Types)
 
 local currentProvider: Types.ExternalDebugger? = nil
-local lastUpdateStep = 0
 
 local Debugger = {}
 
@@ -64,7 +63,7 @@ function Debugger.untrackScope(
 	if currentProvider == nil then
 		return
 	end
-	currentProvider.trackScope(scope)
+	currentProvider.untrackScope(scope)
 end
 
 return Debugger
