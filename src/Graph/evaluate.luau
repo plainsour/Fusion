@@ -37,12 +37,18 @@ local function evaluate(
 		end
 		local targetMeaningfullyChanged = false
 		if needsComputation then
-			for dependency in target.dependencySet do
-				dependency.dependentSet[target] = nil
-				target.dependencySet[dependency] = nil
+			local dependencySet = target.dependencySet
+			for dependency in dependencySet do
+				dependencySet[dependency] = false
 			end
 			target.validity = "busy"
 			local ok, result = pcall(target._evaluate, target)
+			for dependency, used in dependencySet do
+				if used == false then
+					dependency.dependentSet[target] = nil
+					dependencySet[dependency] = nil
+				end
+			end
 			if not ok then
 				target.validity = "invalid"
 				target.lastChange = nil
