@@ -12,6 +12,19 @@ local task = nil -- Disable usage of Roblox's task scheduler
 local Package = script.Parent.Parent
 local Oklab = require(Package.Colour.Oklab)
 
+local labCache: {[Color3]: Vector3} = setmetatable({}, {__mode = "k"}) :: any
+
+local function labOf(
+	colour: Color3
+): Vector3
+	local lab = labCache[colour]
+	if lab == nil then
+		lab = Oklab.fromSRGB(colour)
+		labCache[colour] = lab
+	end
+	return lab :: Vector3
+end
+
 local function lerpType(
 	from: unknown,
 	to: unknown,
@@ -31,8 +44,8 @@ local function lerpType(
 
 		elseif typeString == "Color3" then
 			local to, from = to :: Color3, from :: Color3
-			local fromLab = Oklab.fromSRGB(from)
-			local toLab = Oklab.fromSRGB(to)
+			local fromLab = labOf(from)
+			local toLab = labOf(to)
 			return Oklab.toSRGB(
 				fromLab:Lerp(toLab, ratio),
 				false
@@ -40,8 +53,8 @@ local function lerpType(
 
 		elseif typeString == "ColorSequenceKeypoint" then
 			local to, from = to :: ColorSequenceKeypoint, from :: ColorSequenceKeypoint
-			local fromLab = Oklab.fromSRGB(from.Value)
-			local toLab = Oklab.fromSRGB(to.Value)
+			local fromLab = labOf(from.Value)
+			local toLab = labOf(to.Value)
 			return ColorSequenceKeypoint.new(
 				(to.Time - from.Time) * ratio + from.Time,
 				Oklab.toSRGB(
