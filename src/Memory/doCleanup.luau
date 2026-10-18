@@ -100,7 +100,14 @@ local function cleanupChore(
 				local item = chore[index]
 				chore[index] = nil
 				if item ~= nil then
-					local ok, err = pcall(doCleanup, item)
+					local ok, err
+					if type(item) == "table" or alreadyDestroying[item] then
+						ok, err = pcall(doCleanup, item)
+					else
+						alreadyDestroying[item] = true
+						ok, err = pcall(cleanupChore, item)
+						alreadyDestroying[item] = nil
+					end
 					if not ok and firstError == nil then
 						firstError = err
 					end
