@@ -269,4 +269,18 @@ return function()
 		expect(packed.Min).to.equal(-1)
 		expect(packed.Max).to.equal(0)
 	end)
+
+	it("isSimilar doesn't treat every NaN value as similar", function()
+		local expect = getfenv().expect
+		local isSimilar = require(Fusion.Utility.isSimilar)
+		expect(isSimilar(0 / 0, Vector3.new(0 / 0, 0, 0))).to.equal(false)
+		expect(isSimilar(Vector3.new(0 / 0, 0, 0), Vector3.new(0 / 0, 5, 5))).to.equal(false)
+		expect(isSimilar(Vector3.new(0 / 0, 5, 5), Vector3.new(0 / 0, 5, 5))).to.equal(true)
+		expect(isSimilar(CFrame.new(0 / 0, 1, 2), CFrame.new(0 / 0, 1, 3))).to.equal(false)
+		local scope = {}
+		local value = Value(scope, Vector3.new(0 / 0, 0, 0))
+		value:set(Vector3.new(0 / 0, 5, 5))
+		expect(peek(value).Y).to.equal(5)
+		doCleanup(scope)
+	end)
 end
