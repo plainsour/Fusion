@@ -602,4 +602,30 @@ return function()
 		expect(magnitude < 4 * math.pi).to.equal(true)
 		doCleanup(scope)
 	end)
+
+	it("CFrame springs recover from a NaN position", function()
+		local expect = getfenv().expect
+		local scope = {}
+		local goal = Value(scope, CFrame.Angles(0, 1, 0))
+		local spring = Spring(scope, goal, 20, 1)
+		local now = 5000
+		local function step()
+			now += 1 / 60
+			External.performUpdateStep(now)
+			return peek(spring)
+		end
+		for _ = 1, 30 do
+			step()
+		end
+		local nan = 0 / 0
+		spring:setPosition(CFrame.new(0, 0, 0, nan, 0, 0, 0, nan, 0, 0, 0, nan))
+		local result
+		for _ = 1, 240 do
+			result = step()
+		end
+		local _, yaw = result:ToEulerAnglesYXZ()
+		expect(yaw == yaw).to.equal(true)
+		expect(yaw).to.be.near(1, 1e-3)
+		doCleanup(scope)
+	end)
 end
