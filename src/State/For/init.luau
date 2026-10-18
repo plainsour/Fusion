@@ -10,6 +10,7 @@ local task = nil -- Disable usage of Roblox's task scheduler
 local Package = script.Parent.Parent
 local Types = require(Package.Types)
 -- Graph
+local timestamp = require(Package.Graph.timestamp)
 local depend = require(Package.Graph.depend)
 -- State
 local ForTypes = require(Package.State.For.ForTypes)
@@ -38,7 +39,7 @@ local function For<S, KI, KO, VI, VO>(
 		initialValue: VI
 	) -> ForTypes.SubObject<S, KI, KO, VI, VO>
 ): Types.For<KO, VO>
-	local createdAt = os.clock()
+	local createdAt = timestamp()
 	local self: Self<S, KI, KO, VI, VO> = setmetatable(
 		{
 			createdAt = createdAt,

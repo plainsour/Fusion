@@ -16,6 +16,7 @@ local External = require(Package.External)
 -- Memory
 local checkLifetime = require(Package.Memory.checkLifetime)
 -- Graph
+local timestamp = require(Package.Graph.timestamp)
 local depend = require(Package.Graph.depend)
 local evaluate = require(Package.Graph.evaluate)
 -- State
@@ -57,7 +58,7 @@ local function Tween<T>(
 	goal: Types.UsedAs<T>,
 	tweenInfo: Types.UsedAs<TweenInfo>?
 ): Types.Tween<T>
-	local createdAt = os.clock()
+	local createdAt = timestamp()
 
 	local goalState = castToState(goal)
 	local stopwatch = nil

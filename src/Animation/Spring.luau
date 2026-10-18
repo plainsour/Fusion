@@ -16,6 +16,7 @@ local External = require(Package.External)
 -- Memory
 local checkLifetime = require(Package.Memory.checkLifetime)
 -- Graph
+local timestamp = require(Package.Graph.timestamp)
 local depend = require(Package.Graph.depend)
 local change = require(Package.Graph.change)
 local evaluate = require(Package.Graph.evaluate)
@@ -103,7 +104,7 @@ local function Spring<T>(
 	speed: Types.UsedAs<number>?,
 	damping: Types.UsedAs<number>?
 ): Types.Spring<T>
-	local createdAt = os.clock()
+	local createdAt = timestamp()
 
 	local goalState = castToState(goal)
 	local stopwatch = nil

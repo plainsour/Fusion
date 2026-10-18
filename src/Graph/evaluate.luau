@@ -12,6 +12,7 @@ local task = nil -- Disable usage of Roblox's task scheduler
 
 local Package = script.Parent.Parent
 local Types = require(Package.Types)
+local timestamp = require(Package.Graph.timestamp)
 local External = require(Package.External)
 
 local function evaluate(
@@ -50,7 +51,7 @@ local function evaluate(
 			targetMeaningfullyChanged = result or firstEvaluation
 		end
 		if targetMeaningfullyChanged then
-			target.lastChange = os.clock()
+			target.lastChange = timestamp()
 		end
 		target.validity = "valid"
 		return targetMeaningfullyChanged

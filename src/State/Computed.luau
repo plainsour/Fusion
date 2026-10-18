@@ -18,6 +18,7 @@ local parseError = require(Package.Logging.parseError)
 -- Utility
 local isSimilar = require(Package.Utility.isSimilar)
 -- Graph
+local timestamp = require(Package.Graph.timestamp)
 local depend = require(Package.Graph.depend)
 -- State
 local castToState = require(Package.State.castToState)
@@ -45,7 +46,7 @@ local function Computed<T, S>(
 	processor: (Types.Use, S) -> T,
 	destructor: unknown?
 ): Types.Computed<T>
-	local createdAt = os.clock()
+	local createdAt = timestamp()
 	local self: Self<T, S> = setmetatable(
 		{
 			createdAt = createdAt,

@@ -15,6 +15,7 @@ local Types = require(Package.Types)
 -- Memory
 local checkLifetime = require(Package.Memory.checkLifetime)
 -- Graph
+local timestamp = require(Package.Graph.timestamp)
 local depend = require(Package.Graph.depend)
 local change = require(Package.Graph.change)
 -- State
@@ -47,7 +48,7 @@ local function Stopwatch(
 	scope: Types.Scope<unknown>,
 	timer: Types.StateObject<number>
 ): Stopwatch
-	local createdAt = os.clock()
+	local createdAt = timestamp()
 	local self: Self = setmetatable(
 		{
 			createdAt = createdAt,

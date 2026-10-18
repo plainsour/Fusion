@@ -11,6 +11,7 @@ local Package = script.Parent.Parent.Parent
 local Types = require(Package.Types)
 local External = require(Package.External)
 -- Graph
+local timestamp = require(Package.Graph.timestamp)
 local depend = require(Package.Graph.depend)
 -- State
 local castToState = require(Package.State.castToState)
@@ -50,7 +51,7 @@ local function Disassembly<S, KI, KO, VI, VO>(
 		initialValue: VI
 	) -> ForTypes.SubObject<S, KI, KO, VI, VO>
 ): ForTypes.Disassembly<S, KI, KO, VI, VO>
-	local createdAt = os.clock()
+	local createdAt = timestamp()
 	local self = setmetatable(
 		{
 			createdAt = createdAt,

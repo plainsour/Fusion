@@ -12,6 +12,7 @@ local task = nil -- Disable usage of Roblox's task scheduler
 local Package = script.Parent.Parent
 local Types = require(Package.Types)
 -- Graph
+local timestamp = require(Package.Graph.timestamp)
 local change = require(Package.Graph.change)
 -- Utility
 local isSimilar = require(Package.Utility.isSimilar)
@@ -31,13 +32,13 @@ local function Value<T>(
 	scope: Types.Scope<unknown>,
 	initialValue: T?
 ): Types.Value<T, any>
-	local createdAt = os.clock()
+	local createdAt = timestamp()
 
 	local self: Self<T, any> = setmetatable(
 		{
 			createdAt = createdAt,
 			dependentSet = {},
-			lastChange = os.clock(),
+			lastChange = timestamp(),
 			scope = scope,
 			validity = "valid",
 			_EXTREMELY_DANGEROUS_usedAsValue = initialValue

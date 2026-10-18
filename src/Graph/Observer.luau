@@ -15,6 +15,7 @@ local External = require(Package.External)
 -- Memory
 local checkLifetime = require(Package.Memory.checkLifetime)
 -- Graph
+local timestamp = require(Package.Graph.timestamp)
 local castToGraph = require(Package.Graph.castToGraph)
 local depend = require(Package.Graph.depend)
 local evaluate = require(Package.Graph.evaluate)
@@ -39,7 +40,7 @@ local function Observer(
 	scope: Types.Scope<unknown>,
 	watching: unknown
 ): Types.Observer<any>
-	local createdAt = os.clock()
+	local createdAt = timestamp()
 
 	local self: Self = setmetatable(
 		{

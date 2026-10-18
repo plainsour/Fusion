@@ -11,6 +11,7 @@ local Package = script.Parent.Parent
 local Types = require(Package.Types)
 local External = require(Package.External)
 -- Graph
+local timestamp = require(Package.Graph.timestamp)
 local change = require(Package.Graph.change)
 -- Utility
 local nicknames = require(Package.Utility.nicknames)
@@ -32,7 +33,7 @@ local allTimers: {Self} = {}
 local function ExternalTime(
 	scope: Types.Scope<unknown>
 ): ExternalTime
-	local createdAt = os.clock()
+	local createdAt = timestamp()
 	local self: Self = setmetatable(
 		{
 			createdAt = createdAt,
