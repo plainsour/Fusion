@@ -95,7 +95,14 @@ local function changeAllTimers(): ()
 	local index = 1
 	while index <= #allTimers do
 		local timer = allTimers[index]
-		if timer.scope ~= nil then
+		if timer.scope == nil then
+			index += 1
+			continue
+		elseif next(timer.dependentSet) == nil then
+			timer._EXTREMELY_DANGEROUS_usedAsValue = External.lastUpdateStep()
+			timer.lastChange = timestamp()
+			timer.validity = "valid"
+		else
 			change(timer)
 		end
 		index += 1
