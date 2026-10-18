@@ -29,6 +29,23 @@ class.dependencySet = table.freeze {}
 local METATABLE = table.freeze {__index = class}
 
 local allTimers: {Self} = {}
+local deadTimers = 0
+local updateDepth = 0
+
+local function compactTimers(): ()
+	local write = 0
+	for read = 1, #allTimers do
+		local timer = allTimers[read]
+		if timer.scope ~= nil then
+			write += 1
+			allTimers[write] = timer
+		end
+	end
+	for index = #allTimers, write + 1, -1 do
+		allTimers[index] = nil
+	end
+	deadTimers = 0
+end
 
 local function ExternalTime(
 	scope: Types.Scope<unknown>
@@ -46,10 +63,13 @@ local function ExternalTime(
 		METATABLE
 	) :: any
 	local destroy = function()
+		if self.scope == nil then
+			return
+		end
 		self.scope = nil
-		local index = table.find(allTimers, self)
-		if index ~= nil then
-			table.remove(allTimers, index)
+		deadTimers += 1
+		if updateDepth == 0 and deadTimers * 2 > #allTimers then
+			compactTimers()
 		end
 	end
 	self.oldestChore = destroy
@@ -71,11 +91,28 @@ function class._evaluate(
 	return true
 end
 
+local function changeAllTimers(): ()
+	local index = 1
+	while index <= #allTimers do
+		local timer = allTimers[index]
+		if timer.scope ~= nil then
+			change(timer)
+		end
+		index += 1
+	end
+end
+
 External.bindToUpdateStep(function(
 	externalNow: number
 ): ()
-	for _, timer in allTimers do
-		change(timer)
+	updateDepth += 1
+	local ok, err = pcall(changeAllTimers)
+	updateDepth -= 1
+	if updateDepth == 0 and deadTimers > 0 then
+		compactTimers()
+	end
+	if not ok then
+		error(err, 0)
 	end
 end)
 
